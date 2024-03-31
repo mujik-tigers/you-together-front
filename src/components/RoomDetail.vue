@@ -53,20 +53,13 @@ export default {
       console.log('connect...')
       const sock = new SockJS(this.serverURL + "/ws-stomp");
       this.ws = Stomp.over(sock);
+      this.ws.reconnect_delay = 5000;
 
       this.ws.connect({}, () => {
         this.ws.subscribe("/sub/chat/room/" + this.roomId, message => {
           const recv = JSON.parse(message.body);
           this.receiveMessage(recv);
         });
-      }, () => {
-        axios.get(this.serverURL + "/test")
-            .then((res) => {
-              console.log(res);
-            })
-            .catch(err => {
-              console.log(err);
-            });
       });
     },
     receiveMessage(recv) {
@@ -100,8 +93,21 @@ export default {
             console.log(error);
           });
     },
+    leave(event){
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  },
+  beforeRouteLeave(to, from, next) {
+    this.ws.disconnect();
+    next();
+  },
+  mounted() {
+    window.addEventListener('beforeunload', this.leave)
+  },
+  beforeUnmount() {
+    window.removeEventListener('beforeunload', this.leave)
   }
 }
-
 </script>
 

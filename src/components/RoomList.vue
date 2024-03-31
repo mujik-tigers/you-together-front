@@ -42,7 +42,7 @@ export default {
     },
 
     enterRoom(roomId) {
-      window.location = "/rooms/" + roomId;
+      this.$router.push('/rooms/' + roomId);
     },
   }
 }

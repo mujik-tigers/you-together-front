@@ -8,10 +8,14 @@ import ChatRoom from "@/components/RoomList.vue";
 const router = createRouter({
     history: createWebHistory(),
     routes: [
-        {path: '/rooms/:roomId', component: RoomDetail},
-        {path: '/rooms', component: ChatRoom}
+        {name: 'room',
+            path: '/rooms/:roomId',
+            component: RoomDetail,
+        },
+        {name: 'rooms', path: '/rooms', component: ChatRoom}
     ]
 });
+
 
 createApp(App).use(router)
     .mount('#app');
