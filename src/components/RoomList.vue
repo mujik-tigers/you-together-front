@@ -3,12 +3,17 @@
     <h3>채팅방 리스트</h3>
 
     <ul class="list-group">
-      <li v-for="item in chatrooms" :key="item.code" @click="enterRoom(item.code)">
-        {{ item.title }} - {{ item.currentParticipantsCount }} / {{ item.capacity }} - {{ item.passwordExist }}
+      <li v-for="item in chatrooms" :key="item.roomCode" @click="enterRoom(item.roomCode)">
+        {{ item.roomTitle }} - {{ item.currentParticipant }} / {{ item.capacity }} - {{ item.passwordExist }}
       </li>
     </ul>
-    <button @click="fetchAllRoom" v-if="!this.lastPage">더보기</button>
+    <button @click="fetchAllRoom" v-if="this.hasNext">더보기</button>
   </div>
+
+  <button @click="createRoom">
+    방 만들기
+  </button>
+
 </template>
 
 <script>
@@ -20,9 +25,10 @@ export default {
     return {
       room_name: '',
       chatrooms: [],
-      lastPage: false,
+      hasNext: true,
       pageNumber: -1,
       serverURL: "http://localhost:8080",
+      // serverURL: "https://you-together.site",
     }
   },
   created() {
@@ -30,13 +36,13 @@ export default {
   },
   methods: {
     fetchAllRoom() {
-      if (this.lastPage) {
+      if (this.hasNext === false) {
         return;
       }
 
       axios.get(this.serverURL + '/rooms', {params: {page: this.pageNumber + 1}}).then(response => {
         this.chatrooms = this.chatrooms.concat(response.data.data.rooms);
-        this.lastPage = response.data.data.last;
+        this.hasNext = response.data.data.hasNext;
         this.pageNumber = response.data.data.pageNumber;
       });
     },

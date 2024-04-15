@@ -9,7 +9,7 @@ const router = createRouter({
     history: createWebHistory(),
     routes: [
         {name: 'room',
-            path: '/rooms/:roomId',
+            path: '/rooms/:roomCode',
             component: RoomDetail,
         },
         {name: 'rooms', path: '/rooms', component: ChatRoom}
