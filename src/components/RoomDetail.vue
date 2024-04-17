@@ -1,5 +1,5 @@
 <template>
-  <h1>채팅방 안</h1>
+  <h1>{{title}}</h1>
   <input type="text" v-model="message" @keyup.enter="sendMessage">
   <h1>=====</h1>
   <ul>
@@ -22,7 +22,12 @@
     <h1>이녀석 역할 바꾸기</h1>
     유저 아이디 입력 <input type="text" v-model="changeUserId">
     바꿀 역할 입력 <input type="text" v-model="changeRole">
-    <button @click="downGradeUser"> 클릭 </button>
+    <button @click="changeUserRole"> 클릭 </button>
+  </div>
+  <div>
+    <h1>방 제목 바꾸기</h1>
+    바꿀 방 제목 입력 <input type="text" v-model="changeRoomTitle">
+    <button @click="updateRoomTitle">변경</button>
   </div>
 </template>
 
@@ -36,6 +41,7 @@ axios.defaults.withCredentials = true;
 export default {
   data() {
     return {
+      title: null,
       nickname: '',
       updateNicknameInput: '',
       message: '',
@@ -48,6 +54,7 @@ export default {
       enterSuccess: false,
       changeUserId: null,
       changeRole: null,
+      changeRoomTitle: null,
     }
   },
   created() {
@@ -87,6 +94,8 @@ export default {
         })
       } else if (recv.messageType === 'PARTICIPANTS_INFO') {
         this.participants = recv.participants;
+      } else if (recv.messageType === 'ROOM_TITLE') {
+        this.title = recv.updatedTitle;
       }
 
     },
@@ -95,8 +104,9 @@ export default {
       await axios.post(this.serverURL + '/rooms/' + this.roomCode)
           .then((res) => {
             console.log(res);
-            this.nickname = res.data.data.nickname;
+            this.nickname = res.data.data.user.nickname;
             this.enterSuccess = true;
+            this.title = res.data.data.roomTitle;
           })
           .catch((err) => {
             console.log(err);
@@ -119,14 +129,21 @@ export default {
           });
       this.updateNicknameInput = '';
     },
-    downGradeUser() {
-      axios.patch(this.serverURL + '/users/change-role', {
+    changeUserRole() {
+      axios.patch(this.serverURL + '/users/role', {
         roomCode: this.roomCode,
         changedUserId: this.changeUserId,
         changeUserRole: this.changeRole
       });
       this.changeUserId = '';
       this.changeRole = '';
+    },
+    updateRoomTitle() {
+      axios.patch(this.serverURL + '/rooms/title', {
+        roomCode: this.roomCode,
+        updateTitle: this.changeRoomTitle
+      });
+      this.changeRoomTitle = '';
     },
   },
   beforeRouteLeave(to, from, next) {
