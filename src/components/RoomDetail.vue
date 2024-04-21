@@ -1,5 +1,5 @@
 <template>
-  <h1>{{title}}</h1>
+  <h1>{{ title }}</h1>
   <input type="text" v-model="message" @keyup.enter="sendMessage">
   <h1>=====</h1>
   <ul>
@@ -15,19 +15,30 @@
   <h2>참가인원</h2>
   <ul>
     <li v-for="(item, idx) in participants" :key="idx">
-      유저아이디: {{ item.userId }}, 닉네임: {{ item.nickname }}, 역할: {{ item.role }}
+      유저아이디: {{ item.id }}, 닉네임: {{ item.nickname }}, 역할: {{ item.role }}
     </li>
   </ul>
   <div>
     <h1>이녀석 역할 바꾸기</h1>
     유저 아이디 입력 <input type="text" v-model="changeUserId">
     바꿀 역할 입력 <input type="text" v-model="changeRole">
-    <button @click="changeUserRole"> 클릭 </button>
+    <button @click="changeUserRole"> 클릭</button>
   </div>
   <div>
     <h1>방 제목 바꾸기</h1>
     바꿀 방 제목 입력 <input type="text" v-model="changeRoomTitle">
     <button @click="updateRoomTitle">변경</button>
+  </div>
+  <div>
+    <h1>유튜브 </h1>
+    플레이 리스트 추가하기 <input type="text" v-model="videoAdd">
+    <button @click="addVideo">추가하기</button>
+    <YouTube
+        :src="videoLink"
+        @ready="onPlayerReady"
+        @state-change="onPlayerStateChange"
+        @playback-rate-change="onPlayerRateChange"
+        ref="youtube"/>
   </div>
 </template>
 
@@ -35,10 +46,12 @@
 import SockJS from 'sockjs-client'
 import Stomp from 'webstomp-client'
 import axios from "axios";
+import YouTube from "vue3-youtube";
 
 axios.defaults.withCredentials = true;
 
 export default {
+  components: {YouTube},
   data() {
     return {
       title: null,
@@ -55,6 +68,8 @@ export default {
       changeUserId: null,
       changeRole: null,
       changeRoomTitle: null,
+      videoLink: null,
+      videoAdd:null
     }
   },
   created() {
@@ -92,10 +107,12 @@ export default {
           nickname: recv.nickname,
           content: recv.content
         })
-      } else if (recv.messageType === 'PARTICIPANTS_INFO') {
+      } else if (recv.messageType === 'PARTICIPANTS') {
         this.participants = recv.participants;
       } else if (recv.messageType === 'ROOM_TITLE') {
         this.title = recv.updatedTitle;
+      } else if (recv.messageType === 'PLAY_VIDEO_INFO') {
+        this.videoLink = recv.videoUrl;
       }
 
     },
@@ -122,7 +139,7 @@ export default {
       console.log(this.updateNicknameInput);
       axios.patch(this.serverURL + '/users', {
         roomCode: this.roomCode,
-        updateNickname: this.updateNicknameInput
+        newNickname: this.updateNicknameInput
       })
           .then(response => {
             this.nickname = response.data.data.nickname;
@@ -132,8 +149,8 @@ export default {
     changeUserRole() {
       axios.patch(this.serverURL + '/users/role', {
         roomCode: this.roomCode,
-        changedUserId: this.changeUserId,
-        changeUserRole: this.changeRole
+        targetUserId: this.changeUserId,
+        newUserRole: this.changeRole
       });
       this.changeUserId = '';
       this.changeRole = '';
@@ -141,10 +158,37 @@ export default {
     updateRoomTitle() {
       axios.patch(this.serverURL + '/rooms/title', {
         roomCode: this.roomCode,
-        updateTitle: this.changeRoomTitle
+        newTitle: this.changeRoomTitle
       });
       this.changeRoomTitle = '';
     },
+
+    onPlayerReady() {
+      this.$refs.youtube.playVideo()
+    },
+    onPlayerStateChange() {
+      // -1 – 시작되지 않음
+      // 0 – 종료
+      // 1 – 재생 중
+      // 2 – 일시중지
+      // 3 – 버퍼링
+      // 5 – 동영상 신호
+
+      console.log('현재 상태: ' + this.$refs.youtube.getPlayerState());
+      console.log('현재 시간: ' + this.$refs.youtube.getCurrentTime());
+    },
+    onPlayerRateChange() {
+      console.log('재생속도: ' + this.$refs.youtube.getPlaybackRate());
+    },
+
+    addVideo() {
+      axios.post(this.serverURL + '/playlists', {
+        roomCode: this.roomCode,
+        videoUrl: this.videoAdd
+      });
+      this.videoAdd = '';
+    },
+
   },
   beforeRouteLeave(to, from, next) {
     if (this.ws !== null) {
@@ -158,6 +202,7 @@ export default {
   // beforeUnmount() {
   //   window.removeEventListener('beforeunload', this.leave)
   // }
+
 }
 </script>
 
