@@ -30,9 +30,14 @@
     <button @click="updateRoomTitle">변경</button>
   </div>
   <div>
-    <h1>유튜브 </h1>
-    플레이 리스트 추가하기 <input type="text" v-model="videoAdd">
-    <button @click="addVideo">추가하기</button>
+    <h1>플레이리스트 </h1>
+    <button @click="addVideo">플레이 리스트 추가하기</button>
+    <ul>
+      <li v-for="item in playlist" :key="item.index">
+        {{item.index}}. 제목: {{item.videoTitle}}, 썸네일: {{item.thumbnail}}, 채널이름: {{item.channelTitle}}
+      </li>
+    </ul>
+
     <YouTube
         :src="videoLink"
         @ready="onPlayerReady"
@@ -69,7 +74,7 @@ export default {
       changeRole: null,
       changeRoomTitle: null,
       videoLink: null,
-      videoAdd:null
+      playlist: []
     }
   },
   created() {
@@ -113,6 +118,8 @@ export default {
         this.title = recv.updatedTitle;
       } else if (recv.messageType === 'PLAY_VIDEO_INFO') {
         this.videoLink = recv.videoUrl;
+      } else if (recv.messageType === 'PLAYLIST') {
+        this.playlist = recv.playlist;
       }
 
     },
@@ -184,9 +191,12 @@ export default {
     addVideo() {
       axios.post(this.serverURL + '/playlists', {
         roomCode: this.roomCode,
-        videoUrl: this.videoAdd
+        videoId: "TXI1npEFNss",
+        videoTitle: "What a beautiful song by Sia ❤️ #snowman",
+        channelTitle: "Raymond Salgado",
+        thumbnail: "https://i.ytimg.com/vi/TXI1npEFNss/hqdefault.jpg",
+        duration: "PT1M21S"
       });
-      this.videoAdd = '';
     },
 
   },
