@@ -76,7 +76,8 @@
   <div>
     <button @click="pauseVideo">일시정지</button>
     <button @click="startVideo">재생</button>
-    배속 입력: <input type="text" v-model="currentRate"> <button @click="changeRate">전송</button>
+    배속 입력: <input type="text" v-model="currentRate" /> <button @click="changeRate">전송</button> 이동:
+    <input type="text" v-model="changeTime" /> <button @click="changeCurrentTime">변경</button>
   </div>
 </template>
 
@@ -112,6 +113,7 @@ export default {
       passwordExist: false,
       currentTime: 0,
       currentRate: 1.0,
+      changeTime: 0,
     };
   },
   created() {
@@ -170,7 +172,7 @@ export default {
         this.videoLink = recv.videoUrl;
       } else if (recv.messageType === "PLAYLIST") {
         this.playlist = recv.playlist;
-      } else if (recv.messageType === 'VIDEO_SYNC_INFO') {
+      } else if (recv.messageType === "VIDEO_SYNC_INFO") {
         this.currentTime = recv.playerCurrentTime;
       }
     },
@@ -257,48 +259,61 @@ export default {
     },
 
     deleteVideo(index) {
-      axios.delete(this.serverURL + '/playlists/' + index);
+      axios.delete(this.serverURL + "/playlists/" + index);
     },
 
     pauseVideo() {
       this.ws.send(
-          "/pub/messages/video",
-          JSON.stringify({
-            messageType: 'VIDEO_SYNC_INFO',
-            roomCode: this.roomCode,
-            playerState: 'PAUSE',
-            playerCurrentTime: this.currentTime,
-            playerRate: this.currentRate
-          })
+        "/pub/messages/video",
+        JSON.stringify({
+          messageType: "VIDEO_SYNC_INFO",
+          roomCode: this.roomCode,
+          playerState: "PAUSE",
+          playerCurrentTime: this.currentTime,
+          playerRate: this.currentRate,
+        })
       );
     },
 
     changeRate() {
       this.ws.send(
-          "/pub/messages/video",
-          JSON.stringify({
-            messageType: 'VIDEO_SYNC_INFO',
-            roomCode: this.roomCode,
-            playerState: 'RATE',
-            playerCurrentTime: this.currentTime,
-            playerRate: this.currentRate
-          })
+        "/pub/messages/video",
+        JSON.stringify({
+          messageType: "VIDEO_SYNC_INFO",
+          roomCode: this.roomCode,
+          playerState: "RATE",
+          playerCurrentTime: this.currentTime,
+          playerRate: this.currentRate,
+        })
       );
     },
 
     startVideo() {
       this.ws.send(
-          "/pub/messages/video",
-          JSON.stringify({
-            messageType: 'VIDEO_SYNC_INFO',
-            roomCode: this.roomCode,
-            playerState: 'PLAY',
-            playerCurrentTime: this.currentTime,
-            playerRate: this.currentRate
-          })
+        "/pub/messages/video",
+        JSON.stringify({
+          messageType: "VIDEO_SYNC_INFO",
+          roomCode: this.roomCode,
+          playerState: "PLAY",
+          playerCurrentTime: this.currentTime,
+          playerRate: this.currentRate,
+        })
       );
     },
 
+    changeCurrentTime() {
+      this.ws.send(
+        "/pub/messages/video",
+        JSON.stringify({
+          messageType: "VIDEO_SYNC_INFO",
+          roomCode: this.roomCode,
+          playerState: "SKIP",
+          playerCurrentTime: this.changeTime,
+          playerRate: this.currentRate,
+        })
+      );
+      this.changeTime = 0;
+    },
   },
   beforeRouteLeave(to, from, next) {
     if (this.ws !== null) {
