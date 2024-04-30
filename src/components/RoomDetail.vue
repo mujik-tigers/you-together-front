@@ -26,7 +26,6 @@
     <div class="frame">
       <div>
         <YouTube
-          :src="videoLink"
           @ready="onPlayerReady"
           @state-change="onPlayerStateChange"
           @playback-rate-change="onPlayerRateChange"
@@ -78,6 +77,7 @@
     <button @click="startVideo">재생</button>
     배속 입력: <input type="text" v-model="currentRate" /> <button @click="changeRate">전송</button> 이동:
     <input type="text" v-model="changeTime" /> <button @click="changeCurrentTime">변경</button>
+    <button @click="playNextVideo">다음 영상 재생</button>
   </div>
 </template>
 
@@ -107,7 +107,7 @@ export default {
       changeUserId: null,
       changeRole: null,
       changeRoomTitle: null,
-      videoLink: null,
+      currentVideoId: null,
       playlist: [],
       videoAdd: null,
       passwordExist: false,
@@ -168,12 +168,16 @@ export default {
         this.participants = recv.participants;
       } else if (recv.messageType === "ROOM_TITLE") {
         this.title = recv.updatedTitle;
-      } else if (recv.messageType === "PLAY_VIDEO_INFO") {
-        this.videoLink = recv.videoUrl;
       } else if (recv.messageType === "PLAYLIST") {
         this.playlist = recv.playlist;
       } else if (recv.messageType === "VIDEO_SYNC_INFO") {
-        this.currentTime = recv.playerCurrentTime;
+        if (recv.playerState === 'END') {
+          this.currentVideoId = null;
+        }
+        if (recv.playerState === 'PLAY' && (this.currentVideoId !== recv.videoId)) {
+          this.$refs.youtube.loadVideoById(recv.videoId, recv.playerCurrentTime);
+          this.currentVideoId = recv.videoId;
+        }
       }
     },
     async enterRoom() {
@@ -228,6 +232,7 @@ export default {
     },
 
     onPlayerReady() {
+      console.log('Ready ' + this.currentVideoId);
       this.$refs.youtube.playVideo();
     },
     onPlayerStateChange() {
@@ -314,6 +319,10 @@ export default {
       );
       this.changeTime = 0;
     },
+
+    playNextVideo() {
+      axios.post(this.serverURL + "/playlists/next");
+    }
   },
   beforeRouteLeave(to, from, next) {
     if (this.ws !== null) {
