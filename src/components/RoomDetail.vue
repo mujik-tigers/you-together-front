@@ -59,6 +59,7 @@
               <div style="display: flex; flex-direction: column; justify-content: space-evenly">
                 <span style="font-size: 12px; font-weight: 500"> {{ item.index }} - {{ item.videoTitle }} </span>
                 <span style="font-size: 11px; font-weight: 400">{{ item.channelTitle }}</span>
+                <button @click="deleteVideo(item.index)">삭제</button>
               </div>
             </li>
           </ul>
@@ -244,6 +245,10 @@ export default {
         videoUrl: this.videoAdd,
       });
       this.videoAdd = "";
+    },
+
+    deleteVideo(index) {
+      axios.delete(this.serverURL + '/playlists/' + index);
     },
   },
   beforeRouteLeave(to, from, next) {
