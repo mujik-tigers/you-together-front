@@ -238,7 +238,7 @@ export default {
       axios.post(this.serverURL + "/playlists", {
         roomCode: this.roomCode,
         videoId: "TXI1npEFNss",
-        videoTitle: "What a beautiful song by Sia ❤️ #snowman",
+        videoTitle: "What a beautiful song by Sia ❤️ #snowman" + Math.floor(Math.random() * 101),
         channelTitle: "Raymond Salgado",
         thumbnail: "https://i.ytimg.com/vi/TXI1npEFNss/hqdefault.jpg",
         duration: "PT1M21S",

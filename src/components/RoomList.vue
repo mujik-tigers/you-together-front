@@ -35,7 +35,7 @@ export default {
     return {
       room_name: "",
       chatrooms: [],
-      hasNext: true,
+      hasNext: false,
       pageNumber: -1,
       serverURL: "http://localhost:8080",
       // serverURL: "https://you-together.site",
@@ -46,10 +46,6 @@ export default {
   },
   methods: {
     fetchAllRoom() {
-      if (this.hasNext === false) {
-        return;
-      }
-
       axios.get(this.serverURL + "/rooms", { params: { page: this.pageNumber + 1 } }).then((response) => {
         this.chatrooms = this.chatrooms.concat(response.data.data.rooms);
         this.hasNext = response.data.data.hasNext;
