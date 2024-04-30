@@ -73,6 +73,11 @@
       </div>
     </div>
   </div>
+  <div>
+    <button @click="pauseVideo">일시정지</button>
+    <button @click="startVideo">재생</button>
+    배속 입력: <input type="text" v-model="currentRate"> <button @click="changeRate">전송</button>
+  </div>
 </template>
 
 <script>
@@ -105,6 +110,8 @@ export default {
       playlist: [],
       videoAdd: null,
       passwordExist: false,
+      currentTime: 0,
+      currentRate: 1.0,
     };
   },
   created() {
@@ -118,7 +125,7 @@ export default {
       }
 
       this.ws.send(
-        "/pub/messages",
+        "/pub/messages/chat",
         JSON.stringify({
           roomCode: this.roomCode,
           content: this.message,
@@ -163,6 +170,8 @@ export default {
         this.videoLink = recv.videoUrl;
       } else if (recv.messageType === "PLAYLIST") {
         this.playlist = recv.playlist;
+      } else if (recv.messageType === 'VIDEO_SYNC_INFO') {
+        this.currentTime = recv.playerCurrentTime;
       }
     },
     async enterRoom() {
@@ -250,6 +259,46 @@ export default {
     deleteVideo(index) {
       axios.delete(this.serverURL + '/playlists/' + index);
     },
+
+    pauseVideo() {
+      this.ws.send(
+          "/pub/messages/video",
+          JSON.stringify({
+            messageType: 'VIDEO_SYNC_INFO',
+            roomCode: this.roomCode,
+            playerState: 'PAUSE',
+            playerCurrentTime: this.currentTime,
+            playerRate: this.currentRate
+          })
+      );
+    },
+
+    changeRate() {
+      this.ws.send(
+          "/pub/messages/video",
+          JSON.stringify({
+            messageType: 'VIDEO_SYNC_INFO',
+            roomCode: this.roomCode,
+            playerState: 'RATE',
+            playerCurrentTime: this.currentTime,
+            playerRate: this.currentRate
+          })
+      );
+    },
+
+    startVideo() {
+      this.ws.send(
+          "/pub/messages/video",
+          JSON.stringify({
+            messageType: 'VIDEO_SYNC_INFO',
+            roomCode: this.roomCode,
+            playerState: 'PLAY',
+            playerCurrentTime: this.currentTime,
+            playerRate: this.currentRate
+          })
+      );
+    },
+
   },
   beforeRouteLeave(to, from, next) {
     if (this.ws !== null) {
