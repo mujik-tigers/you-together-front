@@ -3,22 +3,22 @@
     <div class="information">
       <div style="display: flex; align-items: center">
         <img
-          style="width: 10px; padding: 10px"
-          v-if="passwordExist"
-          :src="require('../assets/lock.svg')"
-          alt="locked" />
-        <img style="width: 13px; padding: 10px" v-else :src="require('../assets/unlock.svg')" alt="unlocked" />
+            style="width: 10px; padding: 10px"
+            v-if="passwordExist"
+            :src="require('../assets/lock.svg')"
+            alt="locked"/>
+        <img style="width: 13px; padding: 10px" v-else :src="require('../assets/unlock.svg')" alt="unlocked"/>
         <span class="roomTitle">{{ title }}</span>
         <div style="margin-left: 10px">
-          <input type="text" placeholder="제목은 1자 이상 30자 이하로 입력해 주세요" v-model="changeRoomTitle" />
+          <input type="text" placeholder="제목은 1자 이상 30자 이하로 입력해 주세요" v-model="changeRoomTitle"/>
           <button @click="updateRoomTitle">변경</button>
         </div>
       </div>
       <div style="display: flex; align-items: center">
-        <img style="width: 12px; padding: 8px" :src="require('../assets/user.png')" alt="nickname" />
+        <img style="width: 12px; padding: 8px" :src="require('../assets/user.png')" alt="nickname"/>
         <span class="nickname">{{ nickname }}</span>
         <div style="margin-left: 10px">
-          <input type="text" placeholder="닉네임은 1자 이상 20자 이하로 입력해 주세요" v-model="updateNicknameInput" />
+          <input type="text" placeholder="닉네임은 1자 이상 20자 이하로 입력해 주세요" v-model="updateNicknameInput"/>
           <button @click="updateNickname">변경</button>
         </div>
       </div>
@@ -26,10 +26,11 @@
     <div class="frame">
       <div>
         <YouTube
-          @ready="onPlayerReady"
-          @state-change="onPlayerStateChange"
-          @playback-rate-change="onPlayerRateChange"
-          ref="youtube" />
+            v-show="currentVideoId"
+            @ready="onPlayerReady"
+            @state-change="onPlayerStateChange"
+            @playback-rate-change="onPlayerRateChange"
+            ref="youtube"/>
         <div class="participants">
           <ul>
             <li v-for="(item, idx) in participants" :key="idx">
@@ -54,7 +55,7 @@
           <button @click="addVideo">재생 목록에 영상 추가하기</button>
           <ul>
             <li class="video" v-for="item in playlist" :key="item.index">
-              <img style="width: 112px; height: 65px" :src="item.thumbnail" />
+              <img style="width: 112px; height: 65px" :src="item.thumbnail"/>
               <div style="display: flex; flex-direction: column; justify-content: space-evenly">
                 <span style="font-size: 12px; font-weight: 500"> {{ item.index }} - {{ item.videoTitle }} </span>
                 <span style="font-size: 11px; font-weight: 400">{{ item.channelTitle }}</span>
@@ -67,7 +68,7 @@
           <ul class="messages">
             <li v-for="(item, idx) in messages" :key="idx">{{ item.nickname }} : {{ item.content }}</li>
           </ul>
-          <input type="text" v-model="message" @keypress.enter="sendMessage" />
+          <input type="text" v-model="message" @keypress.enter="sendMessage"/>
         </div>
       </div>
     </div>
@@ -75,8 +76,11 @@
   <div>
     <button @click="pauseVideo">일시정지</button>
     <button @click="startVideo">재생</button>
-    배속 입력: <input type="text" v-model="currentRate" /> <button @click="changeRate">전송</button> 이동:
-    <input type="text" v-model="changeTime" /> <button @click="changeCurrentTime">변경</button>
+    배속 입력: <input type="text" v-model="currentRate"/>
+    <button @click="changeRate">전송</button>
+    이동:
+    <input type="text" v-model="changeTime"/>
+    <button @click="changeCurrentTime">변경</button>
     <button @click="playNextVideo">다음 영상 재생</button>
   </div>
 </template>
@@ -90,7 +94,7 @@ import YouTube from "vue3-youtube";
 axios.defaults.withCredentials = true;
 
 export default {
-  components: { YouTube },
+  components: {YouTube},
   data() {
     return {
       title: null,
@@ -114,6 +118,7 @@ export default {
       currentTime: 0,
       currentRate: 1.0,
       changeTime: 0,
+      iframeReadyFlag: false,
     };
   },
   created() {
@@ -127,11 +132,11 @@ export default {
       }
 
       this.ws.send(
-        "/pub/messages/chat",
-        JSON.stringify({
-          roomCode: this.roomCode,
-          content: this.message,
-        })
+          "/pub/messages/chat",
+          JSON.stringify({
+            roomCode: this.roomCode,
+            content: this.message,
+          })
       );
       this.message = "";
     },
@@ -174,28 +179,29 @@ export default {
         if (recv.playerState === 'END') {
           this.currentVideoId = null;
         }
-        if (recv.playerState === 'PLAY' && (this.currentVideoId !== recv.videoId)) {
-          this.$refs.youtube.loadVideoById(recv.videoId, recv.playerCurrentTime);
+        if (recv.playerState === 'PLAY' && (this.currentVideoId !== recv.videoId) && this.iframeReadyFlag) {
+          console.log('hey');
           this.currentVideoId = recv.videoId;
+          this.$refs.youtube.loadVideoById(this.currentVideoId, recv.playerCurrentTime);
         }
       }
     },
     async enterRoom() {
       console.log("enterRoom..." + this.roomCode);
       await axios
-        .post(this.serverURL + "/rooms/" + this.roomCode)
-        .then((res) => {
-          console.log(res);
-          this.nickname = res.data.data.user.nickname;
-          this.enterSuccess = true;
-          this.title = res.data.data.roomTitle;
-          this.passwordExist = res.data.data.passwordExist;
-        })
-        .catch((err) => {
-          console.log(err);
-          this.enterSuccess = false;
-          this.$router.push("/rooms");
-        });
+          .post(this.serverURL + "/rooms/" + this.roomCode)
+          .then((res) => {
+            console.log(res);
+            this.nickname = res.data.data.user.nickname;
+            this.enterSuccess = true;
+            this.title = res.data.data.roomTitle;
+            this.passwordExist = res.data.data.passwordExist;
+          })
+          .catch((err) => {
+            console.log(err);
+            this.enterSuccess = false;
+            this.$router.push("/rooms");
+          });
     },
     leave(event) {
       event.preventDefault();
@@ -204,13 +210,13 @@ export default {
     updateNickname() {
       console.log(this.updateNicknameInput);
       axios
-        .patch(this.serverURL + "/users", {
-          roomCode: this.roomCode,
-          newNickname: this.updateNicknameInput,
-        })
-        .then((response) => {
-          this.nickname = response.data.data.nickname;
-        });
+          .patch(this.serverURL + "/users", {
+            roomCode: this.roomCode,
+            newNickname: this.updateNicknameInput,
+          })
+          .then((response) => {
+            this.nickname = response.data.data.nickname;
+          });
       this.updateNicknameInput = "";
     },
     changeUserRole(event, userId) {
@@ -232,8 +238,8 @@ export default {
     },
 
     onPlayerReady() {
-      console.log('Ready ' + this.currentVideoId);
-      this.$refs.youtube.playVideo();
+      this.iframeReadyFlag = true;
+      console.log("iframe Player Ready!!");
     },
     onPlayerStateChange() {
       // -1 – 시작되지 않음
@@ -269,53 +275,53 @@ export default {
 
     pauseVideo() {
       this.ws.send(
-        "/pub/messages/video",
-        JSON.stringify({
-          messageType: "VIDEO_SYNC_INFO",
-          roomCode: this.roomCode,
-          playerState: "PAUSE",
-          playerCurrentTime: this.currentTime,
-          playerRate: this.currentRate,
-        })
+          "/pub/messages/video",
+          JSON.stringify({
+            messageType: "VIDEO_SYNC_INFO",
+            roomCode: this.roomCode,
+            playerState: "PAUSE",
+            playerCurrentTime: this.currentTime,
+            playerRate: this.currentRate,
+          })
       );
     },
 
     changeRate() {
       this.ws.send(
-        "/pub/messages/video",
-        JSON.stringify({
-          messageType: "VIDEO_SYNC_INFO",
-          roomCode: this.roomCode,
-          playerState: "RATE",
-          playerCurrentTime: this.currentTime,
-          playerRate: this.currentRate,
-        })
+          "/pub/messages/video",
+          JSON.stringify({
+            messageType: "VIDEO_SYNC_INFO",
+            roomCode: this.roomCode,
+            playerState: "RATE",
+            playerCurrentTime: this.currentTime,
+            playerRate: this.currentRate,
+          })
       );
     },
 
     startVideo() {
       this.ws.send(
-        "/pub/messages/video",
-        JSON.stringify({
-          messageType: "VIDEO_SYNC_INFO",
-          roomCode: this.roomCode,
-          playerState: "PLAY",
-          playerCurrentTime: this.currentTime,
-          playerRate: this.currentRate,
-        })
+          "/pub/messages/video",
+          JSON.stringify({
+            messageType: "VIDEO_SYNC_INFO",
+            roomCode: this.roomCode,
+            playerState: "PLAY",
+            playerCurrentTime: this.currentTime,
+            playerRate: this.currentRate,
+          })
       );
     },
 
     changeCurrentTime() {
       this.ws.send(
-        "/pub/messages/video",
-        JSON.stringify({
-          messageType: "VIDEO_SYNC_INFO",
-          roomCode: this.roomCode,
-          playerState: "SKIP",
-          playerCurrentTime: this.changeTime,
-          playerRate: this.currentRate,
-        })
+          "/pub/messages/video",
+          JSON.stringify({
+            messageType: "VIDEO_SYNC_INFO",
+            roomCode: this.roomCode,
+            playerState: "SKIP",
+            playerCurrentTime: this.changeTime,
+            playerRate: this.currentRate,
+          })
       );
       this.changeTime = 0;
     },
