@@ -56,6 +56,14 @@ export default {
     enterRoom(roomId) {
       this.$router.push("/rooms/" + roomId);
     },
+
+    createRoom() {
+      axios.post(this.serverURL + "/rooms", {
+        title: "안녕하소",
+        capacity: 7,
+        password: null,
+      });
+    },
   },
 };
 </script>
