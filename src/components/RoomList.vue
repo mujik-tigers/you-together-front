@@ -37,8 +37,8 @@ export default {
       chatrooms: [],
       hasNext: false,
       pageNumber: -1,
-      serverURL: "http://localhost:8080",
-      // serverURL: "https://you-together.site",
+      // serverURL: "http://localhost:8080",
+      serverURL: "https://you-together.site",
     };
   },
   created() {

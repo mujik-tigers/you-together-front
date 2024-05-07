@@ -35,7 +35,7 @@
           <ul>
             <li v-for="(item, idx) in participants" :key="idx">
               <form @submit.prevent="changeUserRole($event, item.id)">
-                아이디: {{ item.id }}, 닉네임: {{ item.nickname }}, 역할: {{ item.role }}
+                아이디: {{ item.userId }}, 닉네임: {{ item.nickname }}, 역할: {{ item.role }}
                 <select name="role">
                   <option selected disabled value="">선택해주세요</option>
                   <option value="VIEWER">Viewer</option>
@@ -104,8 +104,8 @@ export default {
       messages: [],
       participants: [],
       roomCode: this.$route.params.roomCode,
-      serverURL: "http://localhost:8080",
-      // serverURL: "https://you-together.site",
+      // serverURL: "http://localhost:8080",
+      serverURL: "https://you-together.site",
       ws: null,
       enterSuccess: false,
       changeUserId: null,
