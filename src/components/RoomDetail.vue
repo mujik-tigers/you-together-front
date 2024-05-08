@@ -34,7 +34,7 @@
         <div class="participants">
           <ul>
             <li v-for="(item, idx) in participants" :key="idx">
-              <form @submit.prevent="changeUserRole($event, item.id)">
+              <form @submit.prevent="changeUserRole($event, item.userId)">
                 아이디: {{ item.userId }}, 닉네임: {{ item.nickname }}, 역할: {{ item.role }}
                 <select name="role">
                   <option selected disabled value="">선택해주세요</option>
@@ -57,9 +57,9 @@
             <li class="video" v-for="item in playlist" :key="item.index">
               <img style="width: 112px; height: 65px" :src="item.thumbnail" />
               <div style="display: flex; flex-direction: column; justify-content: space-evenly">
-                <span style="font-size: 12px; font-weight: 500"> {{ item.index }} - {{ item.videoTitle }} </span>
+                <span style="font-size: 12px; font-weight: 500"> {{ item.index }} == {{ item.videoNumber }} - {{ item.videoTitle }} </span>
                 <span style="font-size: 11px; font-weight: 400">{{ item.channelTitle }}</span>
-                <button @click="deleteVideo(item.index)">삭제</button>
+                <button @click="deleteVideo(item.videoNumber)">삭제</button>
               </div>
             </li>
           </ul>
@@ -104,8 +104,8 @@ export default {
       messages: [],
       participants: [],
       roomCode: this.$route.params.roomCode,
-      // serverURL: "http://localhost:8080",
-      serverURL: "https://you-together.site",
+      serverURL: "http://localhost:8080",
+      // serverURL: "https://you-together.site",
       ws: null,
       enterSuccess: false,
       changeUserId: null,
@@ -273,8 +273,8 @@ export default {
       this.videoAdd = "";
     },
 
-    deleteVideo(index) {
-      axios.delete(this.serverURL + "/playlists/" + index);
+    deleteVideo(videoNumber) {
+      axios.delete(this.serverURL + "/playlists/" + videoNumber);
     },
 
     pauseVideo() {
@@ -331,7 +331,9 @@ export default {
     },
 
     playNextVideo() {
-      axios.post(this.serverURL + "/playlists/next");
+      axios.post(this.serverURL + "/playlists/next", {
+        videoNumber: this.playlist[0].videoNumber
+      });
     },
   },
   beforeRouteLeave(to, from, next) {
