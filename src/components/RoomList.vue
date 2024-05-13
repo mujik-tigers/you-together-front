@@ -1,5 +1,7 @@
 <template>
-  <button @click="createRoom">방 만들기</button>
+  <router-link :to="'rooms/new'" class="roomTitle">
+    방 만들기
+  </router-link>
 
   <div class="roomList">
     <table class="rooms">
@@ -9,7 +11,7 @@
         <th>참가자 / 정원</th>
         <th>비밀방</th>
       </tr>
-      <tr v-for="(item, idx) in chatrooms" :key="item.roomCode">
+      <tr v-for="(item, idx) in chatRooms" :key="item.roomCode">
         <td>{{ idx + 1 }}</td>
         <td style="width: 70%">
           <router-link :to="'rooms/' + item.roomCode" class="roomTitle">
@@ -33,8 +35,7 @@ import axios from "axios";
 export default {
   data() {
     return {
-      room_name: "",
-      chatrooms: [],
+      chatRooms: [],
       hasNext: false,
       pageNumber: -1,
       serverURL: "http://localhost:8080",
@@ -46,23 +47,15 @@ export default {
   },
   methods: {
     fetchAllRoom() {
-      axios.get(this.serverURL + "/rooms", { params: { page: this.pageNumber + 1 } }).then((response) => {
-        this.chatrooms = this.chatrooms.concat(response.data.data.rooms);
+      axios.get(this.serverURL + "/rooms", { params: { page: this.pageNumber + 1 } })
+      .then((response) => {
+        this.chatRooms = this.chatRooms.concat(response.data.data.rooms);
         this.hasNext = response.data.data.hasNext;
         this.pageNumber = response.data.data.pageNumber;
       });
     },
-
     enterRoom(roomId) {
       this.$router.push("/rooms/" + roomId);
-    },
-
-    createRoom() {
-      axios.post(this.serverURL + "/rooms", {
-        title: "안녕하소",
-        capacity: 7,
-        password: null,
-      });
     },
   },
 };

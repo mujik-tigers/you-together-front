@@ -28,7 +28,7 @@
   </form>
 </template>
 
-<script>
+<script scoped>
 import axios from "axios";
 axios.defaults.withCredentials = true;
 
@@ -51,7 +51,7 @@ export default {
         .post(this.roomCreateUrl, this.roomSettings)
         .then((res) => {
           if (res.data.code == 201) {
-            window.location = "/rooms/" + res.data.data.roomCode + "#enter=false";
+            this.$router.push("/rooms/" + res.data.data.roomCode);
           }
         })
         .catch((error) => {

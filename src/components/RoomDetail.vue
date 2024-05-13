@@ -66,7 +66,7 @@
         </div>
         <div class="chat">
           <ul class="messages">
-            <li v-for="(item, idx) in messages" :key="idx">{{ item.nickname }} : {{ item.content }}</li>
+            <li v-for="(item, idx) in messages" :key="idx">{{ this.getNickname(item.userId) }} : {{ item.content }}</li>
           </ul>
           <input type="text" v-model="message" @keypress.enter="sendMessage" />
         </div>
@@ -119,13 +119,18 @@ export default {
       currentRate: 1.0,
       changeTime: 0,
       iframeReadyFlag: false,
+      nicknameMapper: new Map(),
     };
   },
   created() {
     this.enterRoom();
-    setTimeout(() => this.connect(), 300);
   },
   methods: {
+    getNickname(userId) {
+      console.log(userId);
+      console.log(this.nicknameMapper.get(userId));
+      return this.nicknameMapper.get(userId) || '💁🏻';
+    },
     sendMessage() {
       if (this.message === "") {
         return;
@@ -160,7 +165,7 @@ export default {
     receiveMessage(recv) {
       if (recv.messageType === "CHAT") {
         this.messages.push({
-          nickname: recv.nickname,
+          userId: recv.userId,
           content: recv.content,
         });
         setTimeout(() => {
@@ -171,6 +176,13 @@ export default {
         }, 10);
       } else if (recv.messageType === "PARTICIPANTS") {
         this.participants = recv.participants;
+        this.participants.forEach(participant => {
+          this.nicknameMapper.set(participant.userId, participant.nickname);
+          console.log(participant.userId);
+          console.log('hey' + this.nicknameMapper.get(participant.userId));
+        });
+
+        this.nicknameMapper.set('', '');
       } else if (recv.messageType === "ROOM_TITLE") {
         this.title = recv.updatedTitle;
       } else if (recv.messageType === "PLAYLIST") {
@@ -195,11 +207,12 @@ export default {
       await axios
         .post(this.serverURL + "/rooms/" + this.roomCode)
         .then((res) => {
-          console.log(res);
           this.nickname = res.data.data.user.nickname;
           this.enterSuccess = true;
           this.title = res.data.data.roomTitle;
           this.passwordExist = res.data.data.passwordExist;
+          this.messages = res.data.data.chatHistories;
+          this.connect();
         })
         .catch((err) => {
           console.log(err);
