@@ -52,12 +52,17 @@
       </div>
       <div>
         <div class="playlist">
-          <button @click="addVideo">재생 목록에 영상 추가하기</button>
+          <div>
+            <input type="text" placeholder="YouTube 영상 링크를 넣어주세요" v-model="videoUrlInput" />
+            <button @click="addVideo">+</button>
+          </div>
           <ul>
             <li class="video" v-for="item in playlist" :key="item.index">
               <img style="width: 112px; height: 65px" :src="item.thumbnail" />
               <div style="display: flex; flex-direction: column; justify-content: space-evenly">
-                <span style="font-size: 12px; font-weight: 500"> {{ item.index }} == {{ item.videoNumber }} - {{ item.videoTitle }} </span>
+                <span style="font-size: 12px; font-weight: 500">
+                  {{ item.index }} == {{ item.videoNumber }} - {{ item.videoTitle }}
+                </span>
                 <span style="font-size: 11px; font-weight: 400">{{ item.channelTitle }}</span>
                 <button @click="deleteVideo(item.videoNumber)">삭제</button>
               </div>
@@ -120,6 +125,7 @@ export default {
       changeTime: 0,
       iframeReadyFlag: false,
       nicknameMapper: new Map(),
+      videoUrlInput: "",
     };
   },
   created() {
@@ -129,7 +135,7 @@ export default {
     getNickname(userId) {
       console.log(userId);
       console.log(this.nicknameMapper.get(userId));
-      return this.nicknameMapper.get(userId) || '💁🏻';
+      return this.nicknameMapper.get(userId) || "💁🏻";
     },
     sendMessage() {
       if (this.message === "") {
@@ -176,13 +182,9 @@ export default {
         }, 10);
       } else if (recv.messageType === "PARTICIPANTS") {
         this.participants = recv.participants;
-        this.participants.forEach(participant => {
+        this.participants.forEach((participant) => {
           this.nicknameMapper.set(participant.userId, participant.nickname);
-          console.log(participant.userId);
-          console.log('hey' + this.nicknameMapper.get(participant.userId));
         });
-
-        this.nicknameMapper.set('', '');
       } else if (recv.messageType === "ROOM_TITLE") {
         this.title = recv.updatedTitle;
       } else if (recv.messageType === "PLAYLIST") {
@@ -273,17 +275,48 @@ export default {
       console.log("재생속도: " + this.$refs.youtube.getPlaybackRate());
     },
 
-    addVideo() {
+    async addVideo() {
+      const videoId = this.extractYouTubeVideoId(this.videoUrlInput);
+
+      if (videoId == null) {
+        alert("해당 URL과 연관된 유튜브 영상을 찾을 수 없어요");
+        return;
+      }
+
+      const result = await this.fetchVideo(videoId);
+
       axios.post(this.serverURL + "/playlists", {
         roomCode: this.roomCode,
-        videoId: "TXI1npEFNss",
-        videoTitle: "What a beautiful song by Sia ❤️ #snowman" + Math.floor(Math.random() * 101),
-        channelTitle: "Raymond Salgado",
-        thumbnail: "https://i.ytimg.com/vi/TXI1npEFNss/hqdefault.jpg",
-        duration: "PT1M21S",
-        videoUrl: this.videoAdd,
+        videoId: result.id,
+        videoTitle: result.snippet.title,
+        channelTitle: result.snippet.channelTitle,
+        thumbnail: result.snippet.thumbnails.high.url,
+        duration: result.contentDetails.duration,
       });
-      this.videoAdd = "";
+
+      this.videoUrlInput = "";
+    },
+    extractYouTubeVideoId(url) {
+      const regex = /v=([^&]+)/;
+      const match = url.match(regex);
+      if (match) {
+        return match[1];
+      } else {
+        return null;
+      }
+    },
+    async fetchVideo(videoId) {
+      const response = await axios
+        .get("https://www.googleapis.com/youtube/v3/videos", {
+          params: {
+            id: videoId,
+            key: "AIzaSyDXnZWItaCk_ZiSOVP1D3Vhq0M9XxKKcb8",
+            part: "snippet,contentDetails",
+            fields: "items(id,contentDetails(duration),snippet(title,channelTitle,thumbnails(high)))",
+          },
+          withCredentials: false,
+        });
+      return response.data.items[0];
     },
 
     deleteVideo(videoNumber) {
@@ -345,7 +378,7 @@ export default {
 
     playNextVideo() {
       axios.post(this.serverURL + "/playlists/next", {
-        videoNumber: this.playlist[0].videoNumber
+        videoNumber: this.playlist[0].videoNumber,
       });
     },
   },
