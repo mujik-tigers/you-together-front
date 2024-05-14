@@ -24,7 +24,8 @@
       type="text"
       placeholder="비밀번호는 5자 이상 10자 이하의 영문 또는 숫자로 입력해 주세요" />
     <span>{{ errorMessage.password }}</span>
-    <button type="submit" @click.prevent="create">방 만들기</button>
+    <button style="margin-top: 30px" type="submit" @click.prevent="create">방 만들기</button>
+    <button type="submit" @click.prevent="create">목록으로 돌아가기</button>
   </form>
 </template>
 
@@ -83,6 +84,7 @@ export default {
   justify-content: center;
 
   width: 320px;
+  min-height: 530px;
 
   padding: 10px;
   margin: auto;
@@ -92,7 +94,7 @@ export default {
   align-self: flex-start;
 
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
 
   padding: 10px 5px 10px 5px;
 }
@@ -105,27 +107,30 @@ export default {
   margin-bottom: 25px;
 
   border: none;
-  border-radius: 15px;
+  border-radius: 12px;
+  background-color: #252527;
 
   box-sizing: content-box;
   box-shadow: 0 1px 1px #8a817c43;
 
   font-family: Pretendard;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 500;
+  color: inherit;
 
   transition: 0.4s all ease-in-out;
 }
 
 .roomSettings > input:focus {
   outline: none;
-  box-shadow: 0 1px 5px #8a817c43;
+
+  background-color: #303032;
 }
 
 .roomSettings > span {
   height: 10px;
 
-  color: #f50057;
+  color: #49dcb1;
 
   font-family: Pretendard;
   font-size: 11px;
@@ -137,23 +142,23 @@ export default {
 }
 
 .roomSettings > button {
-  width: 100px;
-  height: 50px;
+  width: 140px;
+  height: 48px;
 
   border: none;
-  border-radius: 20px;
+  border-radius: 12px;
 
   padding: 8px;
-  margin: 20px 0px 20px 0px;
+  margin: 15px;
 
-  color: #f4f3ee;
-  background-color: #0f0f0f;
+  color: #49dcb1;
+  background-color: #252527;
 
   font-family: Pretendard;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
 
-  transition: 0.4s all ease-in-out;
+  transition: 0.3s all ease-in-out;
 }
 
 .roomSettings > button:hover,
@@ -161,7 +166,6 @@ export default {
   cursor: pointer;
   outline: none;
 
-  background-color: #0f0f0fd1;
-  box-shadow: 0 2px 6px #8a817c9c;
+  background-color: #303032;
 }
 </style>
