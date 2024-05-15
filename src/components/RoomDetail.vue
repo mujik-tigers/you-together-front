@@ -31,6 +31,10 @@
             <div class="innerContainer">
               <div class="informationTitle">
                 <span @click="titleModalState = true" class="roomTitle">{{ title }}</span>
+                <TitleModal
+                  class="titleModal"
+                  v-if="titleModalState && this.userRole == 'HOST'"
+                  @success="changeTitle"></TitleModal>
               </div>
               <div class="informationVideo">
                 <span style="color: #49dcb1; font-size: 13px; font-weight: 600">현재 재생 중인 유튜브 영상</span>
@@ -40,15 +44,11 @@
                 <span style="font-size: 13px; padding-top: 5px">채널 {{ currentVideoChannel || "침착맨" }}</span>
               </div>
             </div>
+            <div v-if="titleModalState == true" class="modalBackground" @click.self="closeModal"></div>
             <div class="youtubeLink">
               <button style="font-size: 11px" @click="playNextVideo" title="next video">>></button>
             </div>
           </div>
-          <TitleModal
-            class="titleModal"
-            v-if="titleModalState && this.userRole == 'HOST'"
-            @success="changeTitle"></TitleModal>
-          <div v-if="titleModalState == true" class="modalBackground" @click.self="closeModal"></div>
           <!-- information end -->
         </div>
 
@@ -99,23 +99,23 @@
           <!-- chat end -->
 
           <!-- participants list start -->
-          <div class="participantsList">
-            <table class="participants">
-              <tr v-for="(item, idx) in participants" :key="idx">
-                <td @click="nicknameModalState = true" style="text-align: start">
-                  {{ item.nickname
-                  }}<span class="me" v-if="item.userId == this.userId"
-                    >me<NicknameModal
-                      class="nicknameModal"
-                      v-if="nicknameModalState"
-                      @success="nicknameModalState = false"></NicknameModal
-                  ></span>
-                </td>
-                <td style="width: 30%">{{ item.role }}</td>
-              </tr>
-            </table>
-            <div v-if="nicknameModalState == true" class="modalBackground" @click.self="closeModal"></div>
+          <div style="position: relative;">
+            <div class="participantsList">
+              <table class="participants">
+                <tr v-for="(item, idx) in participants" :key="idx">
+                  <td @click="nicknameModalState = true" style="text-align: start">
+                    {{ item.nickname }}<span class="me" v-if="item.userId == this.userId">me</span>
+                  </td>
+                  <td style="width: 30%">{{ item.role }}</td>
+                </tr>
+              </table>
+            </div>
+            <NicknameModal
+              class="nicknameModal"
+              v-if="nicknameModalState"
+              @success="nicknameModalState = false"></NicknameModal>
           </div>
+          <div v-if="nicknameModalState == true" class="modalBackground" @click.self="closeModal"></div>
           <!-- participants list end -->
         </div>
         <!-- side group -->
@@ -487,16 +487,16 @@ export default {
 }
 
 .nicknameModal {
-  position: relative;
+  position: absolute;
   top: 0px;
-  left: -20px;
+  left: -320px;
   z-index: 101;
 }
 
 .titleModal {
-  position: relative;
-  top: -95px;
-  left: 10px;
+  position: absolute;
+  top: 25px;
+  left: 0px;
   z-index: 101;
 }
 
@@ -598,6 +598,7 @@ td:hover {
 }
 
 .informationTitle {
+  position: relative;
   display: flex;
   justify-content: left;
   align-items: center;
@@ -617,6 +618,10 @@ td:hover {
   font-family: Pretendard;
   font-size: 17px;
   font-weight: 700;
+}
+
+.roomTitle:hover {
+  cursor: pointer;
 }
 
 .nickname {
@@ -734,6 +739,7 @@ td:hover {
 }
 
 .participantsList {
+  position: relative;
   width: 320px;
   height: 70px;
 
@@ -757,7 +763,6 @@ td:hover {
 }
 
 .me {
-  position: absolute;
   padding: 0px 10px;
 
   color: #49dcb1;

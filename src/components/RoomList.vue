@@ -1,11 +1,11 @@
 <template>
   <div class="topLink">
-    <router-link :to="'rooms/new'">
-      새로운 방 만들기
-    </router-link>
+    <router-link :to="'rooms/new'"> 새로운 방 만들기 </router-link>
   </div>
 
   <div class="roomList">
+    <PasswordModal class="passwordModal" v-if="passwordModalState"></PasswordModal>
+    <div v-if="passwordModalState == true" class="modalBackground" @click.self="closeModal"></div>
     <table class="rooms">
       <tr>
         <th>NO.</th>
@@ -16,9 +16,16 @@
       <tr v-for="(item, idx) in rooms" :key="item.roomCode">
         <td>{{ idx + 1 }}</td>
         <td style="width: 70%">
-          <router-link :to="'rooms/' + item.roomCode" class="roomTitle">
-            {{ item.roomTitle }}
-          </router-link>
+          <div v-if="!item.passwordExist">
+            <router-link :to="'rooms/' + item.roomCode" class="roomTitle">
+              {{ item.roomTitle }}
+            </router-link>
+          </div>
+          <div v-else>
+            <button class="seceretRoomTitle" @click="passwordModalState = true">
+              {{ item.roomTitle }}
+            </button>
+          </div>
         </td>
         <td style="width: 20%">{{ item.currentParticipant }} / {{ item.capacity }}</td>
         <td style="width: 10%">
@@ -33,8 +40,10 @@
 
 <script>
 import axios from "axios";
+import PasswordModal from "@/components/PasswordModal.vue"
 
 export default {
+  components: { PasswordModal },
   data() {
     return {
       rooms: [],
@@ -42,6 +51,7 @@ export default {
       pageNumber: -1,
       roomListFetchUrl: "http://localhost:8080/rooms",
       // roomListFetchUrl: "https://you-together.site/rooms",
+      passwordModalState: false,
     };
   },
   created() {
@@ -49,8 +59,7 @@ export default {
   },
   methods: {
     fetchAllRoom() {
-      axios.get(this.roomListFetchUrl, { params: { page: this.pageNumber + 1 } })
-      .then((response) => {
+      axios.get(this.roomListFetchUrl, { params: { page: this.pageNumber + 1 } }).then((response) => {
         this.rooms = this.rooms.concat(response.data.data.rooms);
         this.hasNext = response.data.data.hasNext;
         this.pageNumber = response.data.data.pageNumber;
@@ -64,7 +73,26 @@ export default {
 </script>
 
 <style scoped>
+.passwordModal {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 101;
+}
+
+.modalBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #49dcb000;
+  z-index: 100;
+}
+
 .roomList {
+  position: relative;
+  
   width: 800px;
   min-height: 300px;
 
@@ -96,7 +124,6 @@ export default {
   display: block;
 
   color: inherit;
-
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -104,12 +131,30 @@ export default {
   transition: all 0.2s ease-in-out;
 }
 
+.seceretRoomTitle {
+  width: 100%;
+  height: 42px;
+
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+
+  background: none;
+  border: none;
+
+  transition: all 0.2s ease-in-out;
+}
+
+.seceretRoomTitle:hover,
 .roomTitle:hover,
 .roomTitle > router-link-active {
   color: inherit;
 
   border-radius: 9px;
   background-color: #1d1d1f;
+
+  cursor: pointer;
 }
 
 .roomTitle:visited,
@@ -119,7 +164,7 @@ export default {
 
 .more {
   padding: 15px;
-  
+
   margin-bottom: 10px;
 
   font-family: Pretendard;
@@ -153,7 +198,7 @@ export default {
   font-weight: 600;
   text-decoration: none;
   color: inherit;
-  
+
   padding: 12px;
 
   border-radius: 9px;
