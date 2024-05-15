@@ -14,17 +14,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  margin-top: 60px;
+  margin-top: 40px;
 }
 
 ::-webkit-scrollbar {
-  width: 14px;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  border: 4px solid transparent;
-  background-clip: padding-box;
-  background-color: #757575;
+  width: 0px;
 }
 </style>

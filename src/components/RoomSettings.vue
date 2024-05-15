@@ -5,7 +5,7 @@
       id="title"
       v-model="roomSettings.title"
       type="text"
-      placeholder="제목은 1자 이상 30자 이하로 입력해 주세요"
+      placeholder="제목은 1자 이상 30자 이하로 입력해주세요"
       autofocus />
     <span>{{ errorMessage.title }}</span>
     <label for="capacity">정원</label>
@@ -15,17 +15,17 @@
       type="number"
       min="2"
       max="10"
-      placeholder="정원은 2명 이상 10명 이하로 입력해 주세요" />
+      placeholder="정원은 2명 이상 10명 이하로 입력해주세요" />
     <span>{{ errorMessage.capacity }}</span>
     <label for="password">비밀번호 (선택)</label>
     <input
       id="password"
       v-model="roomSettings.password"
       type="text"
-      placeholder="비밀번호는 5자 이상 10자 이하의 영문 또는 숫자로 입력해 주세요" />
+      placeholder="비밀번호는 5자 이상 10자 이하의 영문 또는 숫자로 입력해주세요" />
     <span>{{ errorMessage.password }}</span>
     <button style="margin-top: 30px" type="submit" @click.prevent="create">방 만들기</button>
-    <button type="submit" @click.prevent="create">목록으로 돌아가기</button>
+    <button type="submit" @click.prevent="backTolist">목록으로 돌아가기</button>
   </form>
 </template>
 
@@ -72,6 +72,9 @@ export default {
           }
         });
     },
+    backTolist() {
+      this.$router.push("/rooms");
+    }
   },
 };
 </script>
