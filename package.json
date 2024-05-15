@@ -13,6 +13,7 @@
     "sockjs-client": "^1.6.1",
     "vue": "^3.2.13",
     "vue-router": "^4.3.0",
+    "vue3-youtube": "^0.1.9",
     "webstomp-client": "^1.2.6"
   },
   "devDependencies": {

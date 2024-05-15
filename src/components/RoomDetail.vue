@@ -107,13 +107,15 @@
 </template>
 
 <script>
-import SockJS from 'sockjs-client'
-import Stomp from 'webstomp-client'
+import SockJS from "sockjs-client";
+import Stomp from "webstomp-client";
 import axios from "axios";
+import YouTube from "vue3-youtube";
 
 axios.defaults.withCredentials = true;
 
 export default {
+  components: { YouTube },
   data() {
     return {
       serverBaseUrl: "http://localhost:8080",
