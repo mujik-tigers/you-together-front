@@ -1,5 +1,6 @@
 <template>
   <form class="roomSettings">
+    <span id="mainLogo">youtogether</span>
     <label for="title">제목</label>
     <input
       id="title"
@@ -79,7 +80,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .roomSettings {
   display: flex;
   flex-direction: column;
@@ -89,7 +90,7 @@ export default {
   width: 320px;
   min-height: 530px;
 
-  padding: 10px;
+  padding: 50px;
   margin: auto;
 }
 
@@ -170,5 +171,13 @@ export default {
   outline: none;
 
   background-color: #303032;
+}
+
+#mainLogo {
+  font-size: 16px;
+  font-weight: 700;
+  color: #49dcb1;
+
+  padding: 20px;
 }
 </style>

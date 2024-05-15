@@ -22,7 +22,7 @@
         </td>
         <td style="width: 20%">{{ item.currentParticipant }} / {{ item.capacity }}</td>
         <td style="width: 10%">
-          <img style="width: 9px" v-if="item.passwordExist" :src="require('../assets/lock.svg')" alt="locked" />
+          <img style="width: 11px" v-if="item.passwordExist" :src="require('../assets/lock.svg')" alt="locked" />
           <img style="width: 12px" v-else :src="require('../assets/unlock.svg')" alt="unlocked" />
         </td>
       </tr>
@@ -109,7 +109,7 @@ export default {
   color: inherit;
 
   border-radius: 9px;
-  background-color: #252527;
+  background-color: #1d1d1f;
 }
 
 .roomTitle:visited,
@@ -143,6 +143,8 @@ export default {
   justify-content: flex-end;
 
   margin: auto;
+  padding-top: 20px;
+  padding-bottom: 10px;
 }
 
 .topLink > a {

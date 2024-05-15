@@ -1,107 +1,125 @@
 <template>
-  <div style="display: flex; flex-direction: row; justify-content: center">
-    <div class="frame">
-      <div>
-        <!-- iframe start -->
-        <YouTube
-          width="800"
-          height="450"
-          v-show="currentVideoId"
-          @ready="onPlayerReady"
-          @state-change="onPlayerStateChange"
-          @playback-rate-change="onPlayerRateChange"
-          ref="youtube" />
-        <!-- iframe end -->
-
-        <!-- information start -->
-        <div class="information">
-          <div class="innerContainer">
-            <div class="informationTitle">
-              <span class="roomTitle">{{ title }}</span>
-              <img style="width: 10px; padding: 10px" v-if="hasPassword" :src="require('../assets/lock.svg')" alt="locked" />
-              <img style="width: 13px; padding: 10px" v-else :src="require('../assets/unlock.svg')" alt="unlocked" />
-              <div class="youtubeLink" v-if="this.userRole == 'HOST'">
-                <input type="text" placeholder="제목은 1자 이상 30자 이하로 입력해주세요" v-model="newTitleInput" />
-                <button style="width: 55px; font-size: 12px" @click="changeTitle">수정</button>
-              </div>
-            </div>
-            <div class="informationVideo">
-              <span style="color: #49dcb1; font-size: 13px; padding: 0px 10px">현재 재생 중인 영상 정보</span>
-              <span style="font-size: 13px; padding: 0px 10px">{{ currentVideoTitle }}</span>
-              <span style="font-size: 13px; padding: 0px 10px">{{ currentVideoChannel }}</span>
-            </div>
-          </div>
-          <div class="youtubeLink">
-            <button style="font-size: 11px" @click="changeTitle" title="next video">>></button>
-          </div>
-        </div>
-        <!-- information end -->
+  <div style="display: grid; margin: auto; grid-template-rows: auto 1fr; align-items: center; width: max-content">
+    <div style="grid-row: 1; display: flex; justify-content: space-between; width: 1120px; margin: auto">
+      <span class="logo">youtogether</span>
+      <div style="display: flex; align-items: center">
+        <img style="width: 10px; padding: 10px" v-if="hasPassword" :src="require('../assets/lock.svg')" alt="locked" />
+        <img style="width: 13px; padding: 10px" v-else :src="require('../assets/unlock.svg')" alt="unlocked" />
+        <span style="display: flex; align-items: center; font-size: 12px"
+          ><img style="width: 13px; padding: 6px" :src="require('../assets/users.svg')" alt="users" />{{
+            participants.length
+          }}</span
+        >
       </div>
-
-      <!-- side group -->
-      <div class="sideGroup">
-        <!-- playlist start -->
-        <div class="playlist">
-          <div class="youtubeLink">
-            <input type="text" placeholder="YouTube 영상 링크를 넣어주세요" v-model="videoUrlInput" />
-            <button @click="addVideo" title="add new video">+</button>
-          </div>
-          <ul>
-            <li class="video" v-for="item in playlist" :key="item.index">
-              <img style="width: 112px; height: 65px" :src="item.thumbnail" />
-              <div style="display: flex; flex-direction: column; justify-content: space-evenly">
-                <span style="font-size: 12px; font-weight: 500">
-                  {{ item.index }} == {{ item.videoNumber }} - {{ item.videoTitle }}
-                </span>
-                <span style="font-size: 11px; font-weight: 400">{{ item.channelTitle }}</span>
-                <button @click="deleteVideo(item.videoNumber)">삭제</button>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <!-- playlist end -->
-
-        <!-- chat start -->
-        <div class="chat">
-          <ul class="messages">
-            <li v-for="(item, idx) in messages" :key="idx">
-              <span class="alarmIcon" v-if="item.messageType == 'ALARM'">!</span>
-              <span class="chatNickname" v-if="item.messageType == 'CHAT'">{{ this.getNickname(item.userId) }}</span
-              ><span>{{ item.content }}</span>
-            </li>
-          </ul>
-          <input type="text" v-model="message" @keypress.enter="sendMessage" placeholder="채팅을 입력해주세요" />
-        </div>
-        <!-- chat end -->
-
-        <!-- participants list start -->
-        <div class="participantsList">
-          <table class="participants">
-            <tr v-for="(item, idx) in participants" :key="idx">
-              <td style="text-align: start">
-                {{ item.nickname }}<span class="me" v-if="item.userId == this.userId">me</span>
-              </td>
-              <td style="width: 30%">{{ item.role }}</td>
-            </tr>
-          </table>
-        </div>
-        <!-- participants list end -->
-      </div>
-      <!-- side group -->
     </div>
-  </div>
-  <div>
-    <button @click="pauseVideo">일시정지</button>
-    <button @click="startVideo">재생</button>
-    배속 입력: <input type="text" v-model="currentRate" />
-    <button @click="changeRate">전송</button>
-    이동:
-    <input type="text" v-model="changeTime" />
-    <button @click="changeCurrentTime">변경</button>
-    <button @click="playNextVideo">다음 영상 재생</button>
-    <div style="margin-left: 10px">
-      <input type="text" placeholder="닉네임은 1자 이상 20자 이하로 입력해 주세요" v-model="newNicknameInput" />
-      <button @click="changeNickname">변경</button>
+    <div style="display: flex; flex-direction: row; justify-content: center; margin: auto">
+      <div class="frame">
+        <div>
+          <!-- iframe start -->
+          <YouTube
+            width="800"
+            height="450"
+            v-show="currentVideoId"
+            @ready="onPlayerReady"
+            @state-change="onPlayerStateChange"
+            @playback-rate-change="onPlayerRateChange"
+            ref="youtube" />
+          <!-- iframe end -->
+
+          <!-- information start -->
+          <div class="information">
+            <div class="innerContainer">
+              <div class="informationTitle">
+                <span @click="titleModalState = true" class="roomTitle">{{ title }}</span>
+              </div>
+              <div class="informationVideo">
+                <span style="color: #49dcb1; font-size: 13px; font-weight: 600">현재 재생 중인 유튜브 영상</span>
+                <span style="font-size: 13px">{{
+                  currentVideoTitle || "침착맨은 동료 결혼식 축의금을 얼마나 내야 하나"
+                }}</span>
+                <span style="font-size: 13px; padding-top: 5px">채널 {{ currentVideoChannel || "침착맨" }}</span>
+              </div>
+            </div>
+            <div class="youtubeLink">
+              <button style="font-size: 11px" @click="playNextVideo" title="next video">>></button>
+            </div>
+          </div>
+          <TitleModal
+            class="titleModal"
+            v-if="titleModalState && this.userRole == 'HOST'"
+            @success="changeTitle"></TitleModal>
+          <div v-if="titleModalState == true" class="modalBackground" @click.self="closeModal"></div>
+          <!-- information end -->
+        </div>
+
+        <!-- side group -->
+        <div class="sideGroup">
+          <!-- playlist start -->
+          <div class="playlist">
+            <div class="youtubeLink">
+              <input type="text" placeholder="YouTube 영상 링크를 넣어주세요" v-model="videoUrlInput" />
+              <button @click="addVideo" title="add new video">+</button>
+            </div>
+            <ul>
+              <li class="video" v-for="item in playlist" :key="item.index">
+                <img style="width: 100px; height: 70px" :src="item.thumbnail" />
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-evenly;
+                    width: 140px;
+                    height: 70px;
+                    padding-left: 5px;
+                  ">
+                  <span id="playlistVideoTitle">
+                    {{ item.videoTitle }}
+                  </span>
+                  <span style="font-size: 11px; font-weight: 400">{{ item.channelTitle }}</span>
+                </div>
+                <button class="trash" @click="deleteVideo(item.videoNumber)">
+                  <img style="width: 7px" :src="require('../assets/trash.svg')" alt="delete" />
+                </button>
+              </li>
+            </ul>
+          </div>
+          <!-- playlist end -->
+
+          <!-- chat start -->
+          <div class="chat">
+            <ul class="messages">
+              <li v-for="(item, idx) in messages" :key="idx">
+                <span class="alarmIcon" v-if="item.messageType == 'ALARM'">!</span>
+                <span class="chatNickname" v-if="item.messageType == 'CHAT'">{{ this.getNickname(item.userId) }}</span
+                ><span>{{ item.content }}</span>
+              </li>
+            </ul>
+            <input type="text" v-model="message" @keypress.enter="sendMessage" placeholder="채팅을 입력해주세요" />
+          </div>
+          <!-- chat end -->
+
+          <!-- participants list start -->
+          <div class="participantsList">
+            <table class="participants">
+              <tr v-for="(item, idx) in participants" :key="idx">
+                <td @click="nicknameModalState = true" style="text-align: start">
+                  {{ item.nickname
+                  }}<span class="me" v-if="item.userId == this.userId"
+                    >me<NicknameModal
+                      class="nicknameModal"
+                      v-if="nicknameModalState"
+                      @success="nicknameModalState = false"></NicknameModal
+                  ></span>
+                </td>
+                <td style="width: 30%">{{ item.role }}</td>
+              </tr>
+            </table>
+            <div v-if="nicknameModalState == true" class="modalBackground" @click.self="closeModal"></div>
+          </div>
+          <!-- participants list end -->
+        </div>
+        <!-- side group -->
+      </div>
     </div>
   </div>
 </template>
@@ -111,11 +129,13 @@ import SockJS from "sockjs-client";
 import Stomp from "webstomp-client";
 import axios from "axios";
 import YouTube from "vue3-youtube";
+import NicknameModal from "@/components/NicknameModal.vue";
+import TitleModal from "@/components/TitleModal.vue";
 
 axios.defaults.withCredentials = true;
 
 export default {
-  components: { YouTube },
+  components: { YouTube, NicknameModal, TitleModal },
   data() {
     return {
       serverBaseUrl: "http://localhost:8080",
@@ -124,7 +144,6 @@ export default {
 
       roomCode: this.$route.params.roomCode,
       title: "",
-      newTitleInput: null,
       hasPassword: false,
 
       message: "",
@@ -143,13 +162,14 @@ export default {
 
       userId: null,
       userRole: null,
-      nickname: "",
-      newNicknameInput: "",
       targetUserId: null,
       newUserRole: null,
 
       participants: [],
       nicknameMapper: new Map(),
+
+      nicknameModalState: false,
+      titleModalState: false,
     };
   },
   methods: {
@@ -167,7 +187,6 @@ export default {
         .then((res) => {
           this.title = res.data.data.roomTitle;
           this.userId = res.data.data.user.userId;
-          this.nickname = res.data.data.user.nickname;
           this.userRole = res.data.data.user.role;
           this.hasPassword = res.data.data.passwordExist;
 
@@ -218,6 +237,7 @@ export default {
           this.participants.forEach((participant) => {
             this.nicknameMapper.set(participant.userId, participant.nickname);
           });
+          this.scrollToBottom(".chat > ul");
           break;
         case "ROOM_TITLE":
           this.title = message.changedTitle;
@@ -281,18 +301,13 @@ export default {
       return this.nicknameMapper.get(userId) || "퇴장한 사용자";
     },
 
-    // --- user api start ---
-    changeNickname() {
-      axios
-        .patch(this.serverBaseUrl + "/users", {
-          newNickname: this.newNicknameInput,
-        })
-        .then((response) => {
-          this.nickname = response.data.data.nickname;
-        });
-
-      this.newNicknameInput = "";
+    // close all modal
+    closeModal() {
+      this.nicknameModalState = false;
+      this.titleModalState = false;
     },
+
+    // --- user api start ---
     changeUserRole(event, userId) {
       axios.patch(this.serverBaseUrl + "/users/role", {
         targetUserId: userId,
@@ -304,17 +319,9 @@ export default {
     },
 
     // --- room api start ---
-    changeTitle() {
-      axios
-        .patch(this.serverBaseUrl + "/rooms/title", {
-          roomCode: this.roomCode,
-          newTitle: this.newTitleInput,
-        })
-        .then((response) => {
-          this.title = response.data.data.changedRoomTitle;
-        });
-
-      this.newTitleInput = "";
+    changeTitle(result) {
+      this.title = result;
+      this.titleModalState = false;
     },
 
     // --- playlist api start ---
@@ -440,6 +447,63 @@ export default {
 </script>
 
 <style scoped>
+#playlistVideoTitle {
+  display: block;
+
+  width: 130px;
+
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+
+  padding-bottom: 3px;
+
+  overflow: hidden;
+  word-wrap: break-word;
+  white-space: normal;
+  text-align: left;
+  text-overflow: ellipsis;
+
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+}
+
+.logo {
+  font-weight: 800;
+  text-align: left;
+  color: #49dcb1;
+
+  padding: 20px 0px;
+}
+
+.modalBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #49dcb000;
+  z-index: 100;
+}
+
+.nicknameModal {
+  position: relative;
+  top: 0px;
+  left: -20px;
+  z-index: 101;
+}
+
+.titleModal {
+  position: relative;
+  top: -95px;
+  left: 10px;
+  z-index: 101;
+}
+
+td:hover {
+  cursor: pointer;
+}
+
 .sideGroup {
   display: flex;
   flex-direction: column;
@@ -486,6 +550,7 @@ export default {
   background-color: #272729;
 }
 
+.trash,
 .youtubeLink > button {
   width: 35px;
   height: 35px;
@@ -501,12 +566,21 @@ export default {
   background-color: #252527;
 }
 
+.trash:hover,
 .youtubeLink > button:hover,
 .youtubeLink > button:focus {
   cursor: pointer;
   outline: none;
 
   background-color: #303032;
+}
+
+.trash {
+  width: 24px;
+  height: 24px;
+
+  margin: 0;
+  padding: 0;
 }
 
 .innerContainer {
@@ -518,9 +592,9 @@ export default {
 .information {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 
-  padding: 10px;
+  padding: 20px 2px;
 }
 
 .informationTitle {
@@ -531,8 +605,12 @@ export default {
 
 .informationVideo {
   display: flex;
-  justify-content: left;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  line-height: 1.6;
+
+  padding-top: 10px;
 }
 
 .roomTitle {
@@ -548,7 +626,7 @@ export default {
 }
 
 .frame {
-  width: 90%;
+  grid-row: 2;
   display: flex;
 
   justify-content: center;
@@ -592,6 +670,7 @@ export default {
 
 .video {
   display: flex;
+  align-items: center;
 
   padding: 5px;
 }
@@ -678,6 +757,7 @@ export default {
 }
 
 .me {
+  position: absolute;
   padding: 0px 10px;
 
   color: #49dcb1;
