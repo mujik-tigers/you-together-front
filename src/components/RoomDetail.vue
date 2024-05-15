@@ -1,33 +1,108 @@
 <template>
-  <h1>{{title}}</h1>
-  <input type="text" v-model="message" @keyup.enter="sendMessage">
-  <h1>=====</h1>
-  <ul>
-    <li v-for="(item, idx) in messages" :key="idx">
-      {{ item.nickname }} - {{ item.content }}
-    </li>
-  </ul>
-  <h1>=======</h1>
-  <h1>내 닉네임 - {{ nickname }}</h1>
-  <input type="text" v-model="updateNicknameInput">
-  <button @click="updateNickname">닉네임 변경하기</button>
-  <h1>======</h1>
-  <h2>참가인원</h2>
-  <ul>
-    <li v-for="(item, idx) in participants" :key="idx">
-      유저아이디: {{ item.userId }}, 닉네임: {{ item.nickname }}, 역할: {{ item.role }}
-    </li>
-  </ul>
-  <div>
-    <h1>이녀석 역할 바꾸기</h1>
-    유저 아이디 입력 <input type="text" v-model="changeUserId">
-    바꿀 역할 입력 <input type="text" v-model="changeRole">
-    <button @click="changeUserRole"> 클릭 </button>
+  <div style="display: flex; flex-direction: row; justify-content: center">
+    <div class="frame">
+      <div>
+        <!-- iframe start -->
+        <YouTube
+          width="800"
+          height="450"
+          v-show="currentVideoId"
+          @ready="onPlayerReady"
+          @state-change="onPlayerStateChange"
+          @playback-rate-change="onPlayerRateChange"
+          ref="youtube" />
+        <!-- iframe end -->
+
+        <!-- information start -->
+        <div class="information">
+          <div class="innerContainer">
+            <div class="informationTitle">
+              <span class="roomTitle">{{ title }}</span>
+              <img style="width: 10px; padding: 10px" v-if="hasPassword" :src="require('../assets/lock.svg')" alt="locked" />
+              <img style="width: 13px; padding: 10px" v-else :src="require('../assets/unlock.svg')" alt="unlocked" />
+              <div class="youtubeLink" v-if="this.userRole == 'HOST'">
+                <input type="text" placeholder="제목은 1자 이상 30자 이하로 입력해주세요" v-model="newTitleInput" />
+                <button style="width: 55px; font-size: 12px" @click="changeTitle">수정</button>
+              </div>
+            </div>
+            <div class="informationVideo">
+              <span style="color: #49dcb1; font-size: 13px; padding: 0px 10px">현재 재생 중인 영상 정보</span>
+              <span style="font-size: 13px; padding: 0px 10px">{{ currentVideoTitle }}</span>
+              <span style="font-size: 13px; padding: 0px 10px">{{ currentVideoChannel }}</span>
+            </div>
+          </div>
+          <div class="youtubeLink">
+            <button style="font-size: 11px" @click="changeTitle" title="next video">>></button>
+          </div>
+        </div>
+        <!-- information end -->
+      </div>
+
+      <!-- side group -->
+      <div class="sideGroup">
+        <!-- playlist start -->
+        <div class="playlist">
+          <div class="youtubeLink">
+            <input type="text" placeholder="YouTube 영상 링크를 넣어주세요" v-model="videoUrlInput" />
+            <button @click="addVideo" title="add new video">+</button>
+          </div>
+          <ul>
+            <li class="video" v-for="item in playlist" :key="item.index">
+              <img style="width: 112px; height: 65px" :src="item.thumbnail" />
+              <div style="display: flex; flex-direction: column; justify-content: space-evenly">
+                <span style="font-size: 12px; font-weight: 500">
+                  {{ item.index }} == {{ item.videoNumber }} - {{ item.videoTitle }}
+                </span>
+                <span style="font-size: 11px; font-weight: 400">{{ item.channelTitle }}</span>
+                <button @click="deleteVideo(item.videoNumber)">삭제</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <!-- playlist end -->
+
+        <!-- chat start -->
+        <div class="chat">
+          <ul class="messages">
+            <li v-for="(item, idx) in messages" :key="idx">
+              <span class="alarmIcon" v-if="item.messageType == 'ALARM'">!</span>
+              <span class="chatNickname" v-if="item.messageType == 'CHAT'">{{ this.getNickname(item.userId) }}</span
+              ><span>{{ item.content }}</span>
+            </li>
+          </ul>
+          <input type="text" v-model="message" @keypress.enter="sendMessage" placeholder="채팅을 입력해주세요" />
+        </div>
+        <!-- chat end -->
+
+        <!-- participants list start -->
+        <div class="participantsList">
+          <table class="participants">
+            <tr v-for="(item, idx) in participants" :key="idx">
+              <td style="text-align: start">
+                {{ item.nickname }}<span class="me" v-if="item.userId == this.userId">me</span>
+              </td>
+              <td style="width: 30%">{{ item.role }}</td>
+            </tr>
+          </table>
+        </div>
+        <!-- participants list end -->
+      </div>
+      <!-- side group -->
+    </div>
   </div>
   <div>
-    <h1>방 제목 바꾸기</h1>
-    바꿀 방 제목 입력 <input type="text" v-model="changeRoomTitle">
-    <button @click="updateRoomTitle">변경</button>
+    <button @click="pauseVideo">일시정지</button>
+    <button @click="startVideo">재생</button>
+    배속 입력: <input type="text" v-model="currentRate" />
+    <button @click="changeRate">전송</button>
+    이동:
+    <input type="text" v-model="changeTime" />
+    <button @click="changeCurrentTime">변경</button>
+    <button @click="playNextVideo">다음 영상 재생</button>
+    <div style="margin-left: 10px">
+      <input type="text" placeholder="닉네임은 1자 이상 20자 이하로 입력해 주세요" v-model="newNicknameInput" />
+      <button @click="changeNickname">변경</button>
+    </div>
   </div>
 </template>
 
@@ -41,123 +116,571 @@ axios.defaults.withCredentials = true;
 export default {
   data() {
     return {
-      title: null,
-      nickname: '',
-      updateNicknameInput: '',
-      message: '',
-      messages: [],
-      participants: [],
-      roomCode: this.$route.params.roomCode,
-      serverURL: "http://localhost:8080",
-      // serverURL: "https://you-together.site",
+      serverBaseUrl: "http://localhost:8080",
+      // serverBaseUrl: "https://you-together.site",
       ws: null,
-      enterSuccess: false,
-      changeUserId: null,
-      changeRole: null,
-      changeRoomTitle: null,
-    }
-  },
-  created() {
-    this.enterRoom();
-    setTimeout(() => this.connect(), 300);
+
+      roomCode: this.$route.params.roomCode,
+      title: "",
+      newTitleInput: null,
+      hasPassword: false,
+
+      message: "",
+      messages: [],
+
+      currentVideoId: null,
+      currentVideoTitle: "",
+      currentVideoChannel: "",
+      currentTime: 0,
+      currentRate: 1.0,
+      changeTime: 0,
+      iframeReadyFlag: false,
+
+      playlist: [],
+      videoUrlInput: "",
+
+      userId: null,
+      userRole: null,
+      nickname: "",
+      newNicknameInput: "",
+      targetUserId: null,
+      newUserRole: null,
+
+      participants: [],
+      nicknameMapper: new Map(),
+    };
   },
   methods: {
-    sendMessage() {
-      this.ws.send("/pub/messages", JSON.stringify({
-        roomCode: this.roomCode,
-        content: this.message
-      }));
-      this.message = '';
+    // 1. player ready
+    onPlayerReady() {
+      this.iframeReadyFlag = true;
+
+      // 2. enter room
+      this.enterRoom();
     },
+
+    async enterRoom() {
+      await axios
+        .post(this.serverBaseUrl + "/rooms/" + this.roomCode)
+        .then((res) => {
+          this.title = res.data.data.roomTitle;
+          this.userId = res.data.data.user.userId;
+          this.nickname = res.data.data.user.nickname;
+          this.userRole = res.data.data.user.role;
+          this.hasPassword = res.data.data.passwordExist;
+
+          // 3. connect websocket
+          this.connect();
+        })
+        .catch(() => {
+          this.$router.push("/rooms");
+        });
+    },
+
     connect() {
-      console.log('connect...' + this.enterSuccess);
-      const sock = new SockJS(this.serverURL + "/stomp");
+      const sock = new SockJS(this.serverBaseUrl + "/stomp");
+
       this.ws = Stomp.over(sock);
       this.ws.reconnect_delay = 5000;
 
-      if (!this.enterSuccess) {
-        return;
-      }
-
+      // 4. subscribe with room code
       this.ws.connect({}, () => {
-        this.ws.subscribe("/sub/messages/rooms/" + this.roomCode, message => {
-          const recv = JSON.parse(message.body);
-          this.receiveMessage(recv);
+        this.ws.subscribe("/sub/messages/rooms/" + this.roomCode, (message) => {
+          this.handleMessage(JSON.parse(message.body));
         });
       });
     },
-    receiveMessage(recv) {
-      if (recv.messageType === 'CHAT') {
-        this.messages.unshift({
-          nickname: recv.nickname,
-          content: recv.content
-        })
-      } else if (recv.messageType === 'PARTICIPANTS_INFO') {
-        this.participants = recv.participants;
-      } else if (recv.messageType === 'ROOM_TITLE') {
-        this.title = recv.updatedTitle;
+
+    // 5. disconnect websocket before leave
+    beforeRouteLeave(to, from, next) {
+      if (this.ws !== null) {
+        this.ws.disconnect();
       }
 
+      next();
     },
-    async enterRoom() {
-      console.log('enterRoom...' + this.roomCode);
-      await axios.post(this.serverURL + '/rooms/' + this.roomCode)
-          .then((res) => {
-            console.log(res);
-            this.nickname = res.data.data.user.nickname;
-            this.enterSuccess = true;
-            this.title = res.data.data.roomTitle;
-          })
-          .catch((err) => {
-            console.log(err);
-            this.enterSuccess = false;
-            this.$router.push('/rooms');
+
+    // received message handling method
+    handleMessage(message) {
+      switch (message.messageType) {
+        case "CHAT":
+          this.messages.push({
+            messageType: message.messageType,
+            userId: message.userId,
+            content: message.content,
           });
-    },
-    leave(event) {
-      event.preventDefault();
-      event.returnValue = '';
-    },
-    updateNickname() {
-      console.log(this.updateNicknameInput);
-      axios.patch(this.serverURL + '/users', {
-        roomCode: this.roomCode,
-        updateNickname: this.updateNicknameInput
-      })
-          .then(response => {
-            this.nickname = response.data.data.nickname;
+          this.scrollToBottom(".chat > ul");
+          break;
+        case "PARTICIPANTS":
+          this.participants = message.participants;
+          this.participants.forEach((participant) => {
+            this.nicknameMapper.set(participant.userId, participant.nickname);
           });
-      this.updateNicknameInput = '';
+          break;
+        case "ROOM_TITLE":
+          this.title = message.changedTitle;
+          break;
+        case "PLAYLIST":
+          this.playlist = message.playlist;
+          break;
+        case "VIDEO_SYNC_INFO":
+          if (message.playerState === "END") {
+            this.currentVideoId = null;
+          }
+          if (message.playerState === "PLAY" && this.currentVideoId !== message.videoId && this.iframeReadyFlag) {
+            this.currentVideoId = message.videoId;
+            this.$refs.youtube.loadVideoById(this.currentVideoId, message.playerCurrentTime);
+          }
+          break;
+        case "ALARM":
+          this.messages.push({
+            messageType: message.messageType,
+            content: message.content,
+          });
+          this.scrollToBottom(".chat > ul");
+          break;
+        case "CHAT_HISTORIES":
+          this.messages = message.chatHistories;
+          break;
+        default:
+          console.warn(`Unknown message type: ${message.messageType}`);
+      }
     },
-    changeUserRole() {
-      axios.patch(this.serverURL + '/users/role', {
-        roomCode: this.roomCode,
-        changedUserId: this.changeUserId,
-        changeUserRole: this.changeRole
-      });
-      this.changeUserId = '';
-      this.changeRole = '';
+
+    // scroll to new message
+    scrollToBottom(selector) {
+      const chattings = document.querySelector(selector);
+      setTimeout(() => {
+        if (chattings) {
+          chattings.scrollTop = chattings.scrollHeight;
+        }
+      }, 20);
     },
-    updateRoomTitle() {
-      axios.patch(this.serverURL + '/rooms/title', {
-        roomCode: this.roomCode,
-        updateTitle: this.changeRoomTitle
+
+    // send message to server
+    sendMessage() {
+      if (this.message === "") {
+        return;
+      }
+
+      this.ws.send(
+        "/pub/messages/chat",
+        JSON.stringify({
+          roomCode: this.roomCode,
+          content: this.message,
+        })
+      );
+
+      this.message = "";
+    },
+
+    // get user nickname by nicknameMapper
+    getNickname(userId) {
+      return this.nicknameMapper.get(userId) || "퇴장한 사용자";
+    },
+
+    // --- user api start ---
+    changeNickname() {
+      axios
+        .patch(this.serverBaseUrl + "/users", {
+          newNickname: this.newNicknameInput,
+        })
+        .then((response) => {
+          this.nickname = response.data.data.nickname;
+        });
+
+      this.newNicknameInput = "";
+    },
+    changeUserRole(event, userId) {
+      axios.patch(this.serverBaseUrl + "/users/role", {
+        targetUserId: userId,
+        newUserRole: event.target.role.value,
       });
-      this.changeRoomTitle = '';
+
+      this.targetUserId = "";
+      this.newUserRole = "";
+    },
+
+    // --- room api start ---
+    changeTitle() {
+      axios
+        .patch(this.serverBaseUrl + "/rooms/title", {
+          roomCode: this.roomCode,
+          newTitle: this.newTitleInput,
+        })
+        .then((response) => {
+          this.title = response.data.data.changedRoomTitle;
+        });
+
+      this.newTitleInput = "";
+    },
+
+    // --- playlist api start ---
+    async addVideo() {
+      const videoId = this.extractYouTubeVideoId(this.videoUrlInput);
+
+      if (videoId == null) {
+        alert("해당 URL과 연관된 유튜브 영상을 찾을 수 없어요");
+        return;
+      }
+
+      const result = await this.fetchVideo(videoId);
+
+      axios.post(this.serverBaseUrl + "/playlists", {
+        roomCode: this.roomCode,
+        videoId: result.id,
+        videoTitle: result.snippet.title,
+        channelTitle: result.snippet.channelTitle,
+        thumbnail: result.snippet.thumbnails.high.url,
+        duration: result.contentDetails.duration,
+      });
+
+      this.videoUrlInput = "";
+    },
+    extractYouTubeVideoId(url) {
+      const regex = /v=([^&]+)/;
+      const match = url.match(regex);
+      if (match) {
+        return match[1];
+      } else {
+        return null;
+      }
+    },
+    async fetchVideo(videoId) {
+      const response = await axios.get("https://www.googleapis.com/youtube/v3/videos", {
+        params: {
+          id: videoId,
+          key: process.env.VUE_APP_YOUTUBE_DATA_API_KEY, // (주의) 공개하면 안됨 (주의)
+          part: "snippet,contentDetails",
+          fields: "items(id,contentDetails(duration),snippet(title,channelTitle,thumbnails(high)))",
+        },
+        withCredentials: false,
+      });
+
+      return response.data.items[0];
+    },
+    playNextVideo() {
+      axios.post(this.serverBaseUrl + "/playlists/next", {
+        videoNumber: this.playlist[0].videoNumber,
+      });
+    },
+    deleteVideo(videoNumber) {
+      axios.delete(this.serverBaseUrl + "/playlists/" + videoNumber);
+    },
+
+    // --- YouTube Player & video synchronize ---
+    onPlayerStateChange() {
+      // -1 : 시작되지 않음
+      // 0 : 종료
+      // 1 : 재생 중
+      // 2 : 일시중지
+      // 3 : 버퍼링
+      // 5 : 동영상 신호
+
+      console.log("현재 상태: " + this.$refs.youtube.getPlayerState());
+      console.log("현재 시간: " + this.$refs.youtube.getCurrentTime());
+    },
+    onPlayerRateChange() {
+      console.log("재생속도: " + this.$refs.youtube.getPlaybackRate());
+    },
+    startVideo() {
+      this.ws.send(
+        "/pub/messages/video",
+        JSON.stringify({
+          messageType: "VIDEO_SYNC_INFO",
+          roomCode: this.roomCode,
+          playerState: "PLAY",
+          playerCurrentTime: this.currentTime,
+          playerRate: this.currentRate,
+        })
+      );
+    },
+    pauseVideo() {
+      this.ws.send(
+        "/pub/messages/video",
+        JSON.stringify({
+          messageType: "VIDEO_SYNC_INFO",
+          roomCode: this.roomCode,
+          playerState: "PAUSE",
+          playerCurrentTime: this.currentTime,
+          playerRate: this.currentRate,
+        })
+      );
+    },
+    changeRate() {
+      this.ws.send(
+        "/pub/messages/video",
+        JSON.stringify({
+          messageType: "VIDEO_SYNC_INFO",
+          roomCode: this.roomCode,
+          playerState: "RATE",
+          playerCurrentTime: this.currentTime,
+          playerRate: this.currentRate,
+        })
+      );
+    },
+    changeCurrentTime() {
+      this.ws.send(
+        "/pub/messages/video",
+        JSON.stringify({
+          messageType: "VIDEO_SYNC_INFO",
+          roomCode: this.roomCode,
+          playerState: "SKIP",
+          playerCurrentTime: this.changeTime,
+          playerRate: this.currentRate,
+        })
+      );
+
+      this.changeTime = 0;
     },
   },
-  beforeRouteLeave(to, from, next) {
-    if (this.ws !== null) {
-      this.ws.disconnect();
-    }
-    next();
-  },
-  // mounted() {
-  //   window.addEventListener('beforeunload', this.leave)
-  // },
-  // beforeUnmount() {
-  //   window.removeEventListener('beforeunload', this.leave)
-  // }
-}
+};
 </script>
 
+<style scoped>
+.sideGroup {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  height: 600px;
+
+  margin-left: 10px;
+}
+
+.alarmIcon {
+  font-weight: 800;
+  color: #49dcb1;
+
+  padding: 0px 5px 0px 0px;
+}
+
+.chatNickname {
+  font-weight: 700;
+
+  padding: 0px 10px 0px 0px;
+}
+
+.youtubeLink > input {
+  width: 220px;
+  height: 20px;
+
+  padding: 8px 14px 8px 14px;
+
+  border: none;
+  border-radius: 10px;
+  background-color: #303032;
+
+  font-family: Pretendard;
+  font-size: 13px;
+  font-weight: 400;
+  color: inherit;
+
+  transition: 0.4s all ease-in-out;
+}
+
+.youtubeLink > input:focus {
+  outline: none;
+  background-color: #272729;
+}
+
+.youtubeLink > button {
+  width: 35px;
+  height: 35px;
+
+  border: none;
+  border-radius: 18px;
+
+  padding: 6px;
+  margin: 5px;
+
+  font-weight: 700;
+  color: #49dcb1;
+  background-color: #252527;
+}
+
+.youtubeLink > button:hover,
+.youtubeLink > button:focus {
+  cursor: pointer;
+  outline: none;
+
+  background-color: #303032;
+}
+
+.innerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.information {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px;
+}
+
+.informationTitle {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+}
+
+.informationVideo {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+}
+
+.roomTitle {
+  font-family: Pretendard;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.nickname {
+  font-family: Pretendard;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.frame {
+  width: 90%;
+  display: flex;
+
+  justify-content: center;
+}
+
+.playlist {
+  width: 300px;
+  height: 150px;
+
+  padding: 10px;
+
+  border-radius: 10px;
+  background-color: #181819;
+}
+
+.playlist > ul {
+  width: inherit;
+  height: 100px;
+
+  padding: 0;
+  margin: 10px 0px 10px 0px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.playlist > ul > li {
+  width: 270px;
+  min-height: 12px;
+
+  list-style-type: none;
+
+  padding: 5px 10px 5px 10px;
+
+  font-family: Pretendard;
+  font-size: 12px;
+  font-weight: 400;
+
+  text-align: left;
+}
+
+.video {
+  display: flex;
+
+  padding: 5px;
+}
+
+.chat {
+  width: 320px;
+  height: 320px;
+
+  border-radius: 10px;
+  background-color: #181819;
+}
+
+.chat > ul {
+  width: inherit;
+  height: 250px;
+
+  padding: 0;
+  margin: 10px 0px 10px 0px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.chat > ul > li {
+  width: 270px;
+  line-height: 2;
+
+  list-style-type: none;
+
+  padding: 5px 10px 5px 10px;
+
+  color: inherit;
+
+  font-family: Pretendard;
+  font-size: 13px;
+
+  text-align: left;
+}
+
+.chat > input {
+  width: 260px;
+  height: 20px;
+
+  padding: 8px 14px 8px 14px;
+
+  border: none;
+  border-radius: 10px;
+  background-color: #303032;
+
+  font-family: Pretendard;
+  font-size: 13px;
+  font-weight: 400;
+  color: inherit;
+
+  transition: 0.4s all ease-in-out;
+}
+
+.chat > input:focus {
+  outline: none;
+  background-color: #272729;
+}
+
+.participantsList {
+  width: 320px;
+  height: 70px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.participants {
+  width: inherit;
+
+  line-height: 1.8;
+
+  padding: 10px;
+
+  font-weight: 600;
+  font-size: 12px;
+
+  border: none;
+  border-radius: 10px;
+  background-color: #181819;
+}
+
+.me {
+  padding: 0px 10px;
+
+  color: #49dcb1;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+</style>
