@@ -23,7 +23,6 @@ export default {
   },
   methods: {
     routeToRoom() {
-      console.log(this.roomCode);
       localStorage.setItem('roomPassword_' + this.roomCode, this.passwordInput);
       this.$router.push("/rooms/" + this.roomCode);
       this.passwordInput = "";

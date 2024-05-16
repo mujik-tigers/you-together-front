@@ -230,7 +230,7 @@ export default {
         })
         .catch((error) => {
           console.log(error);
-          if (error.code == 403) {
+          if (error.response.data.code == 403) {
             alert("비밀번호가 일치하지 않아서 입장할 수 없어요")
           }
           this.$router.push("/rooms");
@@ -524,13 +524,14 @@ export default {
 }
 
 .modalBackground {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 120%;
   background-color: #49dcb000;
   z-index: 100;
+  bottom: 0;
 }
 
 .nicknameModal {
