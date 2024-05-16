@@ -19,7 +19,8 @@
           <YouTube
             width="800"
             height="450"
-            v-show="currentVideoId"
+            :videoId="currentVideoId"
+            :noCookie="true"
             @ready="onPlayerReady"
             @state-change="onPlayerStateChange"
             @playback-rate-change="onPlayerRateChange"
@@ -47,7 +48,8 @@
             </div>
             <div v-if="titleModalState == true" class="modalBackground" @click.self="closeModal"></div>
             <div class="youtubeLink">
-              <button style="font-size: 11px" @click="playNextVideo" title="next video">>></button>
+              <span v-if="this.nextVideoErrorMessage != null" class="nextVideoError">{{ nextVideoErrorMessage }}</span>
+              <button v-if="this.isEditableRole" style="font-size: 11px" @click="playNextVideo" title="next video">>></button>
             </div>
           </div>
           <!-- information end -->
@@ -171,6 +173,7 @@ export default {
       changeTime: 0,
       iframeReadyFlag: false,
       videoNotReady: true,
+      nextVideoErrorMessage: null,
 
       playlist: [],
       videoUrlInput: "",
@@ -181,6 +184,7 @@ export default {
       originTargetUserRole: null,
       newUserRole: null,
       priorityMap: new Map(),
+      isEditableRole: false,
 
       participants: [],
       nicknameMapper: new Map(),
@@ -224,12 +228,12 @@ export default {
           this.hasPassword = res.data.data.passwordExist;
           this.currentVideoTitle = res.data.data.currentVideoTitle;
           this.currentChannelTitle = res.data.data.currentChannelTitle;
+          this.isEditableRole = this.isEditable();
 
           // 3. connect websocket
           this.connect();
         })
         .catch((error) => {
-          console.log(error);
           if (error.response.data.code == 403) {
             alert("비밀번호가 일치하지 않아서 입장할 수 없어요")
           }
@@ -267,7 +271,8 @@ export default {
           this.participants.forEach((participant) => {
             this.nicknameMapper.set(participant.userId, participant.nickname);
             if (participant.userId == this.userId) {
-              this.userRole = participant.role
+              this.userRole = participant.role;
+              this.isEditableRole = this.isEditable();
             }
           });
           this.scrollToBottom(".chat > ul");
@@ -345,7 +350,9 @@ export default {
         this.targetUserId = targetUserId;
       }
     },
-
+    isEditable() {
+      return this.priorityMap.get(this.userRole) >= 3;
+    },
     isUnderRole(targetUserRole) {
       return this.priorityMap.get(targetUserRole) < this.priorityMap.get(this.userRole);
     },
@@ -388,14 +395,13 @@ export default {
       this.videoUrlInput = "";
     },
     extractYouTubeVideoId(url) {
-      const regex = /v=([^&]+)/;
-      const match = url.match(regex);
-      if (match) {
-        return match[1];
-      } else {
-        return null;
-      }
+      const parsedURL = new URL(url);
+      const searchParams = parsedURL.searchParams;
+      const videoId = searchParams.get('v');
+
+      return videoId;
     },
+
     async fetchVideo(videoId) {
       const response = await axios.get("https://www.googleapis.com/youtube/v3/videos", {
         params: {
@@ -410,8 +416,18 @@ export default {
       return response.data.items[0];
     },
     playNextVideo() {
+      if (this.playlist.length == 0) {
+        this.nextVideoErrorMessage = "재생목록이 비어있어요";
+        return;
+      }
+
       axios.post(this.serverBaseUrl + "/playlists/next", {
         videoNumber: this.playlist[0].videoNumber,
+      })
+      .catch((error) => {
+          if (error.response.data.data == 404) {
+            this.nextVideoErrorMessage = "마지막 영상이에요";
+          }
       });
     },
     deleteVideo(videoNumber) {
@@ -513,6 +529,19 @@ export default {
 
   line-clamp: 2;
   -webkit-line-clamp: 2;
+}
+
+.nextVideoError {
+  color: #49dcb1;
+
+  font-family: Pretendard;
+  font-size: 12px;
+  font-weight: 500;
+
+  white-space: pre;
+  text-align: left;
+
+  margin-right: 5px;
 }
 
 .logo {
