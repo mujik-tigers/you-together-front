@@ -40,9 +40,9 @@
               <div class="informationVideo">
                 <span style="color: #49dcb1; font-size: 13px; font-weight: 600">현재 재생 중인 유튜브 영상</span>
                 <span style="font-size: 13px">{{
-                  currentVideoTitle || "침착맨은 동료 결혼식 축의금을 얼마나 내야 하나"
+                  currentVideoTitle || "지금은 쉬고 있어요"
                 }}</span>
-                <span style="font-size: 13px; padding-top: 5px">채널 {{ currentVideoChannel || "침착맨" }}</span>
+                <span v-if="this.currentChannelTitle != null" style="font-size: 12px; padding-top: 5px">채널 {{ currentChannelTitle }}</span>
               </div>
             </div>
             <div v-if="titleModalState == true" class="modalBackground" @click.self="closeModal"></div>
@@ -156,8 +156,8 @@ export default {
       messages: [],
 
       currentVideoId: null,
-      currentVideoTitle: "",
-      currentVideoChannel: "",
+      currentVideoTitle: null,
+      currentChannelTitle: null,
       currentTime: 0,
       currentRate: 1.0,
       changeTime: 0,
@@ -215,6 +215,8 @@ export default {
           this.userId = res.data.data.user.userId;
           this.userRole = res.data.data.user.role;
           this.hasPassword = res.data.data.passwordExist;
+          this.currentVideoTitle = res.data.data.currentVideoTitle;
+          this.currentChannelTitle = res.data.data.currentChannelTitle;
 
           // 3. connect websocket
           this.connect();
@@ -292,6 +294,10 @@ export default {
           break;
         case "CHAT_HISTORIES":
           this.messages = message.chatHistories;
+          break;
+        case "START_VIDEO_INFO":
+          this.currentVideoTitle = message.videoTitle;
+          this.currentChannelTitle = message.channelTitle;
           break;
         default:
           console.warn(`Unknown message type: ${message.messageType}`);

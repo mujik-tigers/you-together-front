@@ -31,10 +31,11 @@
                 {{ item.roomTitle }}
               </button>
             </div>
-            <span class="subTitle">지금은 <span style="color: #49dcb1"> {{ item.videoTitle }} </span> <span> 보는 중</span></span>
+            <span v-if="item.videoTitle != null" class="subTitle">지금은 <span style="color: #49dcb1"> {{ item.videoTitle }} </span> <span> 보는 중</span></span>
+            <span v-else class="subTitle">지금은 쉬고 있어요</span>
           </div>
         </td>
-        <td class="videoInformation"><img :src="item.videoThumbnail" width="100px" /></td>
+        <td class="videoInformation"><img v-if="item.videoThumbnail != null" :src="item.videoThumbnail" width="100px" /><img v-else :src="require('../assets/empty-playlist.png')" width="100px" /></td>
         <td><span style="color: #49dcb1;">{{ item.currentParticipant }}</span> / {{ item.capacity }}</td>
       </tr>
     </table>
@@ -98,6 +99,8 @@ export default {
   color: #888888;
 
   padding-top: 5px;
+
+  text-align: left;
 }
 
 .passwordModal {
