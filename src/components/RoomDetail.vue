@@ -16,16 +16,21 @@
       <div class="frame">
         <div>
           <!-- iframe start -->
-          <YouTube
-            width="800"
-            height="450"
-            :videoId="currentVideoId"
-            :noCookie="true"
-            @ready="onPlayerReady"
+          <youtube-iframe v-show="this.currentVideoId != null"
+            ref="youtube"
+            :player-width="800"
+            :player-height="450"
+            :video-id="currentVideoId"
+            :no-cookie="true"
+            :player-parameters="YT_PLAYER_PARAMS"
+            @ready="onReady"
             @state-change="onPlayerStateChange"
-            @playback-rate-change="onPlayerRateChange"
-            ref="youtube" />
-          <img v-if="videoNotReady" width="800" :src="require('../assets/empty-playlist.png')" alt="playlist is empty" />
+            @playback-rate-change="onPlayerRateChange"></youtube-iframe>
+          <img
+            v-if="this.currentVideoId == null"
+            width="800"
+            :src="require('../assets/empty-playlist.png')"
+            alt="playlist is empty" />
           <!-- iframe end -->
 
           <!-- information start -->
@@ -40,16 +45,18 @@
               </div>
               <div class="informationVideo">
                 <span style="color: #49dcb1; font-size: 13px; font-weight: 600">현재 재생 중인 유튜브 영상</span>
-                <span style="font-size: 13px">{{
-                  currentVideoTitle || "지금은 쉬고 있어요"
-                }}</span>
-                <span v-if="this.currentChannelTitle != null" style="font-size: 12px; padding-top: 5px">채널 {{ currentChannelTitle }}</span>
+                <span style="font-size: 13px">{{ currentVideoTitle || "지금은 쉬고 있어요" }}</span>
+                <span v-if="this.currentChannelTitle != null" style="font-size: 12px; padding-top: 5px"
+                  >채널 {{ currentChannelTitle }}</span
+                >
               </div>
             </div>
             <div v-if="titleModalState == true" class="modalBackground" @click.self="closeModal"></div>
             <div class="youtubeLink">
               <span v-if="this.nextVideoErrorMessage != null" class="nextVideoError">{{ nextVideoErrorMessage }}</span>
-              <button v-if="this.isEditableRole" style="font-size: 11px" @click="playNextVideo" title="next video">>></button>
+              <button v-if="this.isEditableRole" style="font-size: 11px" @click="playNextVideo" title="next video">
+                >>
+              </button>
             </div>
           </div>
           <!-- information end -->
@@ -102,12 +109,13 @@
           <!-- chat end -->
 
           <!-- participants list start -->
-          <div style="position: relative;">
+          <div style="position: relative">
             <div class="participantsList">
               <table class="participants">
                 <tr v-for="(item, idx) in participants" :key="idx">
                   <td style="text-align: start">
-                    {{ item.nickname }}<span class="me" @click="nicknameModalState = true" v-if="item.userId == this.userId">me</span>
+                    {{ item.nickname
+                    }}<span class="me" @click="nicknameModalState = true" v-if="item.userId == this.userId">me</span>
                   </td>
                   <td @click="popUpRoleModal(item.role, item.userId)" style="width: 30%">{{ item.role }}</td>
                 </tr>
@@ -117,7 +125,10 @@
               class="nicknameModal"
               v-if="nicknameModalState"
               @success="nicknameModalState = false"></NicknameModal>
-            <RoleModal :userRole="this.userRole" :originTargetUserRole="this.originTargetUserRole" :targetUserId="this.targetUserId"
+            <RoleModal
+              :userRole="this.userRole"
+              :originTargetUserRole="this.originTargetUserRole"
+              :targetUserId="this.targetUserId"
               class="roleModal"
               v-if="roleModalState"
               @success="roleModalState = false"></RoleModal>
@@ -135,7 +146,6 @@
 import SockJS from "sockjs-client";
 import Stomp from "webstomp-client";
 import axios from "axios";
-import YouTube from "vue3-youtube";
 import NicknameModal from "@/components/NicknameModal.vue";
 import TitleModal from "@/components/TitleModal.vue";
 import RoleModal from "@/components/RoleModal.vue";
@@ -143,7 +153,7 @@ import RoleModal from "@/components/RoleModal.vue";
 axios.defaults.withCredentials = true;
 
 export default {
-  components: { YouTube, NicknameModal, TitleModal, RoleModal },
+  components: { NicknameModal, TitleModal, RoleModal },
   // disconnect websocket before leave
   beforeRouteLeave(to, from, next) {
     if (this.ws != null) {
@@ -157,6 +167,8 @@ export default {
       serverBaseUrl: "http://localhost:8080",
       // serverBaseUrl: "https://you-together.site",
       ws: null,
+      player: null,
+      YT_PLAYER_PARAMS: { autoplay: 1 },
 
       roomCode: this.$route.params.roomCode,
       title: "",
@@ -172,9 +184,9 @@ export default {
       currentRate: 1.0,
       changeTime: 0,
       iframeReadyFlag: false,
-      videoNotReady: true,
       nextVideoErrorMessage: null,
 
+      playerVars: null,
       playlist: [],
       videoUrlInput: "",
 
@@ -196,30 +208,25 @@ export default {
   },
   created() {
     const priorities = {
-        HOST: 5,
-        MANAGER: 4,
-        EDITOR: 3,
-        GUEST: 2,
-        VIEWER: 1,
-      };
+      HOST: 5,
+      MANAGER: 4,
+      EDITOR: 3,
+      GUEST: 2,
+      VIEWER: 1,
+    };
 
     for (const key in priorities) {
       this.priorityMap.set(key, priorities[key]);
     }
   },
+  mounted() {
+    this.enterRoom();
+  },
   methods: {
-    // 1. player ready
-    onPlayerReady() {
-      this.iframeReadyFlag = true;
-
-      // 2. enter room
-      this.enterRoom();
-    },
-
     async enterRoom() {
       await axios
         .post(this.serverBaseUrl + "/rooms/" + this.roomCode, {
-          passwordInput: localStorage.getItem('roomPassword_' + this.roomCode) || null
+          passwordInput: localStorage.getItem("roomPassword_" + this.roomCode) || null,
         })
         .then((res) => {
           this.title = res.data.data.roomTitle;
@@ -230,12 +237,11 @@ export default {
           this.currentChannelTitle = res.data.data.currentChannelTitle;
           this.isEditableRole = this.isEditable();
 
-          // 3. connect websocket
           this.connect();
         })
         .catch((error) => {
           if (error.response.data.code == 403) {
-            alert("비밀번호가 일치하지 않아서 입장할 수 없어요")
+            alert("비밀번호가 일치하지 않아서 입장할 수 없어요");
           }
           this.$router.push("/rooms");
         });
@@ -253,6 +259,8 @@ export default {
           this.handleMessage(JSON.parse(message.body));
         });
       });
+
+      this.player = this.$refs.youtube;
     },
 
     // received message handling method
@@ -286,10 +294,17 @@ export default {
         case "VIDEO_SYNC_INFO":
           if (message.playerState === "END") {
             this.currentVideoId = null;
+            this.currentVideoTitle = null;
+            this.currentChannelTitle = null;
           }
-          if (message.playerState === "PLAY" && this.currentVideoId !== message.videoId && this.iframeReadyFlag) {
+          if (message.playerState === "PLAY" && this.iframeReadyFlag && this.currentVideoId !== message.videoId) {  // 다른 영상일 때
             this.currentVideoId = message.videoId;
-            this.$refs.youtube.loadVideoById(this.currentVideoId, message.playerCurrentTime);
+            this.player.loadVideoById(this.currentVideoId, message.playerCurrentTime);
+          }
+
+          if (message.playerState === "PLAY" && this.iframeReadyFlag && Math.abs(this.player.getCurrentTime() - message.playerCurrentTime) >= 0.3) {  // 시간이 안맞을 때
+            console.log(this.player.getCurrentTime());
+            this.player.seekTo(message.playerCurrentTime);
           }
           break;
         case "ALARM":
@@ -345,7 +360,7 @@ export default {
 
     popUpRoleModal(targetUserRole, targetUserId) {
       if (targetUserId != this.userId && this.priorityMap.get(this.userRole) >= 4 && this.isUnderRole(targetUserRole)) {
-        this.roleModalState = true
+        this.roleModalState = true;
         this.originTargetUserRole = targetUserRole;
         this.targetUserId = targetUserId;
       }
@@ -397,7 +412,7 @@ export default {
     extractYouTubeVideoId(url) {
       const parsedURL = new URL(url);
       const searchParams = parsedURL.searchParams;
-      const videoId = searchParams.get('v');
+      const videoId = searchParams.get("v");
 
       return videoId;
     },
@@ -421,40 +436,36 @@ export default {
         return;
       }
 
-      axios.post(this.serverBaseUrl + "/playlists/next", {
-        videoNumber: this.playlist[0].videoNumber,
-      })
-      .catch((error) => {
+      axios
+        .post(this.serverBaseUrl + "/playlists/next", {
+          videoNumber: this.playlist[0].videoNumber,
+        })
+        .catch((error) => {
           if (error.response.data.data == 404) {
             this.nextVideoErrorMessage = "마지막 영상이에요";
           }
-      });
+        });
     },
     deleteVideo(videoNumber) {
       axios.delete(this.serverBaseUrl + "/playlists/" + videoNumber);
     },
 
     // --- YouTube Player & video synchronize ---
-    onPlayerStateChange() {
+    onReady() {
+      this.iframeReadyFlag = true;
+    },
+    onPlayerStateChange(event) {
       // -1 : 시작되지 않음
       // 0 : 종료
       // 1 : 재생 중
       // 2 : 일시중지
       // 3 : 버퍼링
       // 5 : 동영상 신호
-      if (this.$refs.youtube.getPlayerState() != -1) {
-        this.videoNotReady = false;
+      if (event.target.getPlayerState() != -1) {
+        this.iframeReadyFlag = true;
       }
-
-      if (this.$refs.youtube.getPlayerState() == 0 || this.$refs.youtube.getPlayerState() == -1) {
-        this.videoNotReady = true;
-      }
-      console.log("현재 상태: " + this.$refs.youtube.getPlayerState());
-      console.log("현재 시간: " + this.$refs.youtube.getCurrentTime());
     },
-    onPlayerRateChange() {
-      console.log("재생속도: " + this.$refs.youtube.getPlaybackRate());
-    },
+    onPlayerRateChange() {},
     startVideo() {
       this.ws.send(
         "/pub/messages/video",
