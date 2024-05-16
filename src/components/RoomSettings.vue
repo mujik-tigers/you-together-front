@@ -53,6 +53,7 @@ export default {
         .post(this.roomCreateUrl, this.roomSettings)
         .then((res) => {
           if (res.data.code == 201) {
+            localStorage.setItem('roomPassword_' + res.data.data.roomCode, res.data.data.password);
             this.$router.push("/rooms/" + res.data.data.roomCode);
           }
         })

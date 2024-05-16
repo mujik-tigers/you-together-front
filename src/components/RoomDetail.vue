@@ -24,6 +24,7 @@
             @state-change="onPlayerStateChange"
             @playback-rate-change="onPlayerRateChange"
             ref="youtube" />
+          <img v-if="videoNotReady" width="800" :src="require('../assets/empty-playlist.png')" alt="playlist is empty" />
           <!-- iframe end -->
 
           <!-- information start -->
@@ -103,10 +104,10 @@
             <div class="participantsList">
               <table class="participants">
                 <tr v-for="(item, idx) in participants" :key="idx">
-                  <td @click="nicknameModalState = true" style="text-align: start">
-                    {{ item.nickname }}<span class="me" v-if="item.userId == this.userId">me</span>
+                  <td style="text-align: start">
+                    {{ item.nickname }}<span class="me" @click="nicknameModalState = true" v-if="item.userId == this.userId">me</span>
                   </td>
-                  <td style="width: 30%">{{ item.role }}</td>
+                  <td @click="popUpRoleModal(item.role, item.userId)" style="width: 30%">{{ item.role }}</td>
                 </tr>
               </table>
             </div>
@@ -114,8 +115,12 @@
               class="nicknameModal"
               v-if="nicknameModalState"
               @success="nicknameModalState = false"></NicknameModal>
+            <RoleModal :userRole="this.userRole" :originTargetUserRole="this.originTargetUserRole" :targetUserId="this.targetUserId"
+              class="roleModal"
+              v-if="roleModalState"
+              @success="roleModalState = false"></RoleModal>
           </div>
-          <div v-if="nicknameModalState == true" class="modalBackground" @click.self="closeModal"></div>
+          <div v-if="nicknameModalState || roleModalState" class="modalBackground" @click.self="closeModal"></div>
           <!-- participants list end -->
         </div>
         <!-- side group -->
@@ -131,11 +136,12 @@ import axios from "axios";
 import YouTube from "vue3-youtube";
 import NicknameModal from "@/components/NicknameModal.vue";
 import TitleModal from "@/components/TitleModal.vue";
+import RoleModal from "@/components/RoleModal.vue";
 
 axios.defaults.withCredentials = true;
 
 export default {
-  components: { YouTube, NicknameModal, TitleModal },
+  components: { YouTube, NicknameModal, TitleModal, RoleModal },
   data() {
     return {
       serverBaseUrl: "http://localhost:8080",
@@ -156,6 +162,7 @@ export default {
       currentRate: 1.0,
       changeTime: 0,
       iframeReadyFlag: false,
+      videoNotReady: true,
 
       playlist: [],
       videoUrlInput: "",
@@ -163,14 +170,30 @@ export default {
       userId: null,
       userRole: null,
       targetUserId: null,
+      originTargetUserRole: null,
       newUserRole: null,
+      priorityMap: new Map(),
 
       participants: [],
       nicknameMapper: new Map(),
 
       nicknameModalState: false,
       titleModalState: false,
+      roleModalState: false,
     };
+  },
+  created() {
+    const priorities = {
+        HOST: 5,
+        MANAGER: 4,
+        EDITOR: 3,
+        GUEST: 2,
+        VIEWER: 1,
+      };
+
+    for (const key in priorities) {
+      this.priorityMap.set(key, priorities[key]);
+    }
   },
   methods: {
     // 1. player ready
@@ -182,8 +205,11 @@ export default {
     },
 
     async enterRoom() {
+      console.log
       await axios
-        .post(this.serverBaseUrl + "/rooms/" + this.roomCode)
+        .post(this.serverBaseUrl + "/rooms/" + this.roomCode, {
+          passwordInput: localStorage.getItem('roomPassword_' + this.roomCode) || null
+        })
         .then((res) => {
           this.title = res.data.data.roomTitle;
           this.userId = res.data.data.user.userId;
@@ -236,6 +262,9 @@ export default {
           this.participants = message.participants;
           this.participants.forEach((participant) => {
             this.nicknameMapper.set(participant.userId, participant.nickname);
+            if (participant.userId == this.userId) {
+              this.userRole = participant.role
+            }
           });
           this.scrollToBottom(".chat > ul");
           break;
@@ -301,21 +330,25 @@ export default {
       return this.nicknameMapper.get(userId) || "퇴장한 사용자";
     },
 
+    popUpRoleModal(targetUserRole, targetUserId) {
+      if (targetUserId != this.userId && this.priorityMap.get(this.userRole) >= 4 && this.isUnderRole(targetUserRole)) {
+        this.roleModalState = true
+        this.originTargetUserRole = targetUserRole;
+        this.targetUserId = targetUserId;
+      }
+    },
+
+    isUnderRole(targetUserRole) {
+      return this.priorityMap.get(targetUserRole) < this.priorityMap.get(this.userRole);
+    },
+
     // close all modal
     closeModal() {
       this.nicknameModalState = false;
       this.titleModalState = false;
-    },
-
-    // --- user api start ---
-    changeUserRole(event, userId) {
-      axios.patch(this.serverBaseUrl + "/users/role", {
-        targetUserId: userId,
-        newUserRole: event.target.role.value,
-      });
-
-      this.targetUserId = "";
-      this.newUserRole = "";
+      this.roleModalState = false;
+      this.originTargetUserRole = null;
+      this.targetUserId = null;
     },
 
     // --- room api start ---
@@ -385,7 +418,13 @@ export default {
       // 2 : 일시중지
       // 3 : 버퍼링
       // 5 : 동영상 신호
+      if (this.$refs.youtube.getPlayerState() != -1) {
+        this.videoNotReady = false;
+      }
 
+      if (this.$refs.youtube.getPlayerState() == 0 || this.$refs.youtube.getPlayerState() == -1) {
+        this.videoNotReady = true;
+      }
       console.log("현재 상태: " + this.$refs.youtube.getPlayerState());
       console.log("현재 시간: " + this.$refs.youtube.getCurrentTime());
     },
@@ -481,7 +520,7 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 120%;
   background-color: #49dcb000;
   z-index: 100;
 }
@@ -490,6 +529,13 @@ export default {
   position: absolute;
   top: 0px;
   left: -320px;
+  z-index: 101;
+}
+
+.roleModal {
+  position: absolute;
+  top: -42px;
+  left: 310px;
   z-index: 101;
 }
 
