@@ -104,7 +104,7 @@ export default {
 }
 
 .passwordModal {
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -112,13 +112,15 @@ export default {
 }
 
 .modalBackground {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   background-color: #161616bd;
   z-index: 100;
+  bottom: 0;
+  overflow-y: auto;
 }
 
 .roomList {
@@ -180,6 +182,10 @@ export default {
   transition: all 0.2s ease-in-out;
 }
 
+.seceretRoomTitle:hover {
+  cursor: pointer;
+}
+
 .titleHover:hover,
 .titleHover:hover,
 .roomTitle > router-link-active {
@@ -187,8 +193,6 @@ export default {
 
   border-radius: 9px;
   background-color: #1d1d1f;
-
-  cursor: pointer;
 }
 
 .roomTitle:visited,

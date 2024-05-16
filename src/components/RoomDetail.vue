@@ -213,7 +213,6 @@ export default {
     },
 
     async enterRoom() {
-      console.log
       await axios
         .post(this.serverBaseUrl + "/rooms/" + this.roomCode, {
           passwordInput: localStorage.getItem('roomPassword_' + this.roomCode) || null
@@ -229,7 +228,11 @@ export default {
           // 3. connect websocket
           this.connect();
         })
-        .catch(() => {
+        .catch((error) => {
+          console.log(error);
+          if (error.code == 403) {
+            alert("비밀번호가 일치하지 않아서 입장할 수 없어요")
+          }
           this.$router.push("/rooms");
         });
     },
