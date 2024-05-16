@@ -301,10 +301,11 @@ export default {
             this.currentVideoId = message.videoId;
             this.player.loadVideoById(this.currentVideoId, message.playerCurrentTime);
           }
-
           if (message.playerState === "PLAY" && this.iframeReadyFlag && Math.abs(this.player.getCurrentTime() - message.playerCurrentTime) >= 0.3) {  // 시간이 안맞을 때
-            console.log(this.player.getCurrentTime());
             this.player.seekTo(message.playerCurrentTime);
+          }
+          if (message.playerState === "PLAY" && this.iframeReadyFlag && this.player.getPlaybackRate() != message.playerRate) {  // 재생 속도가 변경되었을 때
+            this.player.setPlaybackRate(message.playerRate);
           }
           break;
         case "ALARM":
@@ -355,7 +356,7 @@ export default {
 
     // get user nickname by nicknameMapper
     getNickname(userId) {
-      return this.nicknameMapper.get(userId) || "퇴장한 사용자";
+      return this.nicknameMapper.get(userId) || "나간 사용자";
     },
 
     popUpRoleModal(targetUserRole, targetUserId) {
@@ -465,7 +466,9 @@ export default {
         this.iframeReadyFlag = true;
       }
     },
-    onPlayerRateChange() {},
+    onPlayerRateChange() {
+      this.changeRate();
+    },
     startVideo() {
       this.ws.send(
         "/pub/messages/video",
@@ -510,7 +513,7 @@ export default {
           roomCode: this.roomCode,
           playerState: "SKIP",
           playerCurrentTime: this.changeTime,
-          playerRate: this.currentRate,
+          playerRate: this.player.getPlaybackRate(),
         })
       );
 
