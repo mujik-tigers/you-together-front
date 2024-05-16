@@ -142,6 +142,14 @@ axios.defaults.withCredentials = true;
 
 export default {
   components: { YouTube, NicknameModal, TitleModal, RoleModal },
+  // disconnect websocket before leave
+  beforeRouteLeave(to, from, next) {
+    if (this.ws != null) {
+      this.ws.disconnect();
+    }
+
+    next();
+  },
   data() {
     return {
       serverBaseUrl: "http://localhost:8080",
@@ -238,15 +246,6 @@ export default {
           this.handleMessage(JSON.parse(message.body));
         });
       });
-    },
-
-    // 5. disconnect websocket before leave
-    beforeRouteLeave(to, from, next) {
-      if (this.ws !== null) {
-        this.ws.disconnect();
-      }
-
-      next();
     },
 
     // received message handling method
