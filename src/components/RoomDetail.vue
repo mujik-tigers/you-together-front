@@ -495,7 +495,7 @@ export default {
             messageType: "VIDEO_SYNC_INFO",
             roomCode: this.roomCode,
             playerState: "PLAY",
-            playerCurrentTime: this.currentTime,
+            playerCurrentTime: this.player.getCurrentTime(),
             playerRate: this.currentRate,
           })
       );
@@ -539,7 +539,7 @@ export default {
           }
           this.playerState = null;
           this.clickFlag = false;
-        }, 500);
+        }, 900);
         window.focus();
       }
     },
