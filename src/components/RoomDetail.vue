@@ -206,7 +206,9 @@ export default {
 
       playerState: null,
       changeTime: 0,
-      clickFlag: false,
+      focusFlag: false,
+      iframeLock: false,
+
       interval:null
     };
   },
@@ -294,8 +296,8 @@ export default {
           this.playlist = message.playlist;
           break;
         case "VIDEO_SYNC_INFO":
-          if (this.clickFlag) {
-            break
+          if (this.iframeLock) {
+            break;
           }
           if (message.playerState === "END") {
             this.currentVideoId = null;
@@ -307,10 +309,10 @@ export default {
               this.currentVideoId = message.videoId;
               this.player.loadVideoById(this.currentVideoId, message.playerCurrentTime);
             }
-            if (Math.abs(this.player.getCurrentTime() - message.playerCurrentTime) >= 0.5) {  // 시간이 안맞을 때
+            if (Math.abs(this.player.getCurrentTime() - message.playerCurrentTime) >= 0.6) {  // 시간이 안맞을 때
               this.player.seekTo(message.playerCurrentTime);
             }
-            if (message.playerState === "PLAY" && (this.currentRate !== message.playerRate)) { // 재생 속도가 변경되었을 때
+            if (this.currentRate !== message.playerRate) { // 재생 속도가 변경되었을 때
               this.currentRate = message.playerRate;
               this.player.setPlaybackRate(this.currentRate);
             }
@@ -473,7 +475,7 @@ export default {
       this.interval = setInterval(this.checkFocus, 100);
       this.enterRoom();
     },
-    onPlayerStateChange() {
+    onPlayerStateChange(event) {
       // -1 : 시작되지 않음
       // 0 : 종료
       // 1 : 재생 중
@@ -481,65 +483,103 @@ export default {
       // 3 : 버퍼링
       // 5 : 동영상 신호
 
-      console.log('onPlayerStateChange 이벤트 발생! 상태 ' + this.player.getPlayerState() + ", 시간: " + this.player.getCurrentTime());
-      this.playerState = this.player.getPlayerState();
-      this.currentTime = this.player.getCurrentTime();
+      // console.log('onPlayerStateChange 이벤트 발생! 상태 ' + this.player.getPlayerState() + ", 시간: " + this.player.getCurrentTime());
+      // this.currentTime = this.player.getCurrentTime();
+      this.playerState = event.target.getPlayerState();
+
+      console.log(event);
+      if (this.checkFocus && (event.data == 2 || event.data == 3) && this.isEditable()) {
+        this.iframeLock = true;
+        console.log('event target!!!')
+
+        setTimeout(() => {
+          if (this.playerState == 2) {
+            this.pauseVideo(event.target.getCurrentTime());
+          } else if (this.playerState == 1) {
+            this.playVideo(event.target.getCurrentTime());
+          }
+          window.focus();
+          setTimeout(() => {
+            this.iframeLock = false;
+          }, 1500);
+        }, 600);
+      }
+      
     },
-    onPlayerRateChange() {
-      this.currentRate = this.player.getPlaybackRate();
-      console.log('RATE 메세지 전송!');
-      this.ws.send(
-          "/pub/messages/video",
-          JSON.stringify({
-            messageType: "VIDEO_SYNC_INFO",
-            roomCode: this.roomCode,
-            playerState: "RATE",
-            playerCurrentTime: this.currentTime,
-            playerRate: this.currentRate,
-          })
-      );
+    onPlayerRateChange(event) {
+      if (this.checkFocus && event.target.getPlaybackRate() != this.currentRate && this.isEditable()) {
+        this.iframeLock = true;
+        this.currentRate = event.target.getPlaybackRate();
+        console.log('RATE 메세지 전송!');
+        this.ws.send(
+            "/pub/messages/video",
+            JSON.stringify({
+              messageType: "VIDEO_SYNC_INFO",
+              roomCode: this.roomCode,
+              playerState: "RATE",
+              playerCurrentTime: this.currentTime,
+              playerRate: this.currentRate,
+            })
+        );
+        window.focus();
+        setTimeout(() => {
+          this.iframeLock = false;
+        }, 1500);
+      }
     },
-    playVideo() {
-      console.log('PLAY 메세지 전송!');
+    playVideo(currentTime) {
+      console.log('PLAY 메세지 전송! --- ', currentTime);
       this.ws.send(
           "/pub/messages/video",
           JSON.stringify({
             messageType: "VIDEO_SYNC_INFO",
             roomCode: this.roomCode,
             playerState: "PLAY",
-            playerCurrentTime: this.player.getCurrentTime(),
+            playerCurrentTime: currentTime,
             playerRate: this.currentRate,
           })
       );
     },
-    pauseVideo() {
-      console.log('PAUSE 메세지 전송!');
+    pauseVideo(currentTime) {
+      console.log('PAUSE 메세지 전송! --- ', currentTime);
       this.ws.send(
           "/pub/messages/video",
           JSON.stringify({
             messageType: "VIDEO_SYNC_INFO",
             roomCode: this.roomCode,
             playerState: "PAUSE",
-            playerCurrentTime: this.currentTime,
+            playerCurrentTime: currentTime,
             playerRate: this.currentRate,
           })
       );
     },
     checkFocus() {
+      console.log(this.iframeLock);
       if (document.activeElement === this.$refs.youtube.$el.querySelector('iframe')) {
-        console.log('click 발생');
-        this.clickFlag = true;
-        setTimeout(() => {
-          console.log('콜백 실행시의 state: ' + this.playerState + ', time: ' + this.currentTime);
-          if (this.playerState === 1) {
-            this.playVideo();
-          } else if (this.playerState === 2) {
-            this.pauseVideo();
-          }
-          this.playerState = null;
-          this.clickFlag = false;
-        }, 900);
-        window.focus();
+        console.log('--- iframe focus on ---');
+
+        if (this.focusFlag == false) {
+          setTimeout(() => {
+            this.focusFlag = false;
+          }, 10000);
+        }
+
+        this.focusFlag = true;
+
+        // setTimeout(() => {
+        //   console.log('콜백 실행시의 state: ' + this.playerState + ', time: ' + this.currentTime);
+        //   if (this.playerState === 1) {
+        //     this.playVideo();
+        //   } else if (this.playerState === 2) {
+        //     this.pauseVideo();
+        //   }
+        //   this.playerState = null;
+        //   this.focusFlag = false;
+        // }, 900);
+        // window.focus();
+      } else {
+        console.log('--- iframe focus off ---');
+        this.focusFlag = false;
       }
     },
   },
