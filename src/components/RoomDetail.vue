@@ -307,11 +307,12 @@ export default {
               this.currentVideoId = message.videoId;
               this.player.loadVideoById(this.currentVideoId, message.playerCurrentTime);
             }
-            if (Math.abs(this.player.getCurrentTime() - message.playerCurrentTime) >= 0.3) {  // 시간이 안맞을 때
+            if (Math.abs(this.player.getCurrentTime() - message.playerCurrentTime) >= 0.5) {  // 시간이 안맞을 때
               this.player.seekTo(message.playerCurrentTime);
             }
-            if (message.playerState === "PLAY" && (this.player.getPlaybackRate() !== message.playerRate)) { // 재생 속도가 변경되었을 때
-              this.player.setPlaybackRate(message.playerRate);
+            if (message.playerState === "PLAY" && (this.currentRate !== message.playerRate)) { // 재생 속도가 변경되었을 때
+              this.currentRate = message.playerRate;
+              this.player.setPlaybackRate(this.currentRate);
             }
             if (this.player.getPlayerState() !== 1) {   // 클라이언트가 재생중이 아니라면
               this.player.playVideo();
@@ -485,7 +486,18 @@ export default {
       this.currentTime = this.player.getCurrentTime();
     },
     onPlayerRateChange() {
-      this.changeRate();
+      this.currentRate = this.player.getPlaybackRate();
+      console.log('RATE 메세지 전송!');
+      this.ws.send(
+          "/pub/messages/video",
+          JSON.stringify({
+            messageType: "VIDEO_SYNC_INFO",
+            roomCode: this.roomCode,
+            playerState: "RATE",
+            playerCurrentTime: this.currentTime,
+            playerRate: this.currentRate,
+          })
+      );
     },
     playVideo() {
       console.log('PLAY 메세지 전송!');
@@ -508,19 +520,6 @@ export default {
             messageType: "VIDEO_SYNC_INFO",
             roomCode: this.roomCode,
             playerState: "PAUSE",
-            playerCurrentTime: this.currentTime,
-            playerRate: this.currentRate,
-          })
-      );
-    },
-    changeRate() {
-      console.log('RATE 메세지 전송!');
-      this.ws.send(
-          "/pub/messages/video",
-          JSON.stringify({
-            messageType: "VIDEO_SYNC_INFO",
-            roomCode: this.roomCode,
-            playerState: "RATE",
             playerCurrentTime: this.currentTime,
             playerRate: this.currentRate,
           })
