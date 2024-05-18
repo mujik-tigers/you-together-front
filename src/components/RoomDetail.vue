@@ -458,7 +458,10 @@ export default {
 
     // --- YouTube Player & video synchronize ---
     onReady() {
+      console.log("iframe Ready!");
       this.player = this.$refs.youtube;
+      console.log(this.$refs.youtube.$el);
+      setInterval(this.checkFocus, 1000);
       this.enterRoom();
     },
     onPlayerStateChange() {
@@ -521,10 +524,18 @@ export default {
             playerRate: this.player.getPlaybackRate(),
           })
       );
-
       this.changeTime = 0;
     },
+    checkFocus() {
+      console.log(document.activeElement);
+      console.log(this.$refs.youtube.$el.querySelector('iframe'));
+      if (document.activeElement === this.$refs.youtube.$el.querySelector('iframe')) {
+        console.log('clicked');
+        window.focus();
+      }
+    },
   },
+
 };
 </script>
 
