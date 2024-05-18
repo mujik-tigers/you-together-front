@@ -1,6 +1,5 @@
 import {createApp} from 'vue'
 import {createRouter, createWebHistory} from "vue-router";
-import YoutubeIframe from '@techassi/vue-youtube-iframe';
 
 import App from './App.vue'
 import RoomDetail from "@/components/RoomDetail.vue";
@@ -15,5 +14,5 @@ const router = createRouter({
         { name: 'roomSettings', path: '/rooms/new', component: RoomSettings },
     ]
 });
-createApp(App).use(router).use(YoutubeIframe)
+createApp(App).use(router)
     .mount('#app');
