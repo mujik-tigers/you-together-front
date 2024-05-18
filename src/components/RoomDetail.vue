@@ -87,7 +87,7 @@
                   </span>
                   <span style="font-size: 11px; font-weight: 400">{{ item.channelTitle }}</span>
                 </div>
-                <button class="trash" @click="deleteVideo(item.videoNumber)">
+                <button v-show="isEditable" class="trash" @click="deleteVideo(item.videoNumber)">
                   <img style="width: 7px" :src="require('../assets/trash.svg')" alt="delete"/>
                 </button>
               </li>

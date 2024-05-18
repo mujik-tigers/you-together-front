@@ -5,6 +5,10 @@
   </div>
 
   <div v-if="passwordModalState == true" class="modalBackground" @click.self="closeModal"></div>
+  <div class="search">
+    <input @keypress.enter="fetchAllRoomWithKeyword" type="text" placeholder="방 제목으로 찾아볼 수 있어요" v-model="keyword" />
+    <button @click="fetchAllRoomRefresh">초기화</button>
+  </div>
   <div class="roomList">
     <PasswordModal :roomCode="this.selectedRoomCode" class="passwordModal" v-if="passwordModalState"></PasswordModal>
     <table class="rooms">
@@ -53,6 +57,7 @@ export default {
     return {
       rooms: [],
       hasNext: false,
+      keyword: null,
       pageNumber: -1,
       roomListFetchUrl: process.env.VUE_APP_SERVER_URL + "/rooms",
       passwordModalState: false,
@@ -63,8 +68,29 @@ export default {
     this.fetchAllRoom();
   },
   methods: {
+    fetchAllRoomRefresh() {
+      axios.get(this.roomListFetchUrl, { params: { page: 0 } }).then((response) => {
+        this.rooms = response.data.data.rooms;
+        this.hasNext = response.data.data.hasNext;
+        this.pageNumber = response.data.data.pageNumber;
+      })
+      .then(() => {
+        this.keyword = null;
+      })
+    },
+    fetchAllRoomWithKeyword() {
+      if (this.keyword == null || this.keyword === "" || this.keyword.trim().length === 0 ) {
+        return;
+      }
+
+      axios.get(this.roomListFetchUrl, { params: { page: 0, keyword: this.keyword } }).then((response) => {
+        this.rooms = response.data.data.rooms;
+        this.hasNext = response.data.data.hasNext;
+        this.pageNumber = response.data.data.pageNumber;
+      });
+    },
     fetchAllRoom() {
-      axios.get(this.roomListFetchUrl, { params: { page: this.pageNumber + 1 } }).then((response) => {
+      axios.get(this.roomListFetchUrl, { params: { page: this.pageNumber + 1, keyword: this.keyword } }).then((response) => {
         this.rooms = this.rooms.concat(response.data.data.rooms);
         this.hasNext = response.data.data.hasNext;
         this.pageNumber = response.data.data.pageNumber;
@@ -90,6 +116,60 @@ export default {
   font-size: 16px;
   font-weight: 700;
   color: #49dcb1;
+}
+
+.search {
+  font-size: 12px;
+
+  margin-top: 10px;
+}
+
+.search > input {
+  width: 320px;
+  height: 20px;
+
+  padding: 8px 14px 8px 14px;
+  margin: 8px 0px;
+  
+  border: none;
+  border-radius: 10px;
+  background-color: #303032;
+
+  font-family: Pretendard;
+  font-size: 13px;
+  font-weight: 400;
+  color: #f4f3ee;
+
+  transition: 0.4s all ease-in-out;
+}
+
+.search > input:focus {
+  outline: none;
+  background-color: #272729;
+}
+
+.search > button {
+  width: 55px;
+  height: 35px;
+
+  border: none;
+  border-radius: 10px;
+
+  padding: 6px;
+  margin-left: 10px;
+
+  font-size: 11px;
+  font-weight: 600;
+  color: #f4f3ee;
+  background-color: #252527;
+}
+
+.search > button:hover,
+.search > button:focus {
+  cursor: pointer;
+  outline: none;
+
+  background-color: #303032;
 }
 
 .subTitle {

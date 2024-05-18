@@ -1,6 +1,6 @@
 <template>
   <div class="passwordMiniModal">
-    <span style="font-size: 13px; font-weight: 600;">해당 방은 비밀방입니다.</span>
+    <span style="font-size: 13px; font-weight: 600;">해당 방은 비밀방입니다</span>
     <div class="miniInput">
       <input type="text" placeholder="비밀번호를 입력해주세요" v-model="passwordInput" />
       <button @click="routeToRoom">✓</button>
