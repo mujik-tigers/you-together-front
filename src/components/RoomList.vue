@@ -54,8 +54,7 @@ export default {
       rooms: [],
       hasNext: false,
       pageNumber: -1,
-      roomListFetchUrl: "http://localhost:8080/rooms",
-      // roomListFetchUrl: "https://you-together.site/rooms",
+      roomListFetchUrl: process.env.VUE_APP_SERVER_URL + "/rooms",
       passwordModalState: false,
       selectedRoomCode: null,
     };

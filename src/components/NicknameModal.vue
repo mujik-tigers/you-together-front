@@ -16,9 +16,7 @@ axios.defaults.withCredentials = true;
 export default {
   data() {
     return {
-      serverBaseUrl: "http://localhost:8080",
-      // serverBaseUrl: "https://you-together.site",
-
+      serverBaseUrl: process.env.VUE_APP_SERVER_URL,
       newNicknameInput: "",
       errorMessage: "",
     };

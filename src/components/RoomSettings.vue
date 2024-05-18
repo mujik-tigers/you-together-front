@@ -37,8 +37,7 @@ axios.defaults.withCredentials = true;
 export default {
   data() {
     return {
-      // roomCreateUrl: "https://you-together.site/rooms",
-      roomCreateUrl: "http://localhost:8080/rooms",
+      serverBaseUrl: process.env.VUE_APP_SERVER_URL + '/rooms',
       roomSettings: { title: null, capacity: null, password: null },
       errorMessage: { title: null, capacity: null, password: null },
     };
@@ -50,7 +49,7 @@ export default {
       }
 
       axios
-        .post(this.roomCreateUrl, this.roomSettings)
+        .post(this.serverBaseUrl, this.roomSettings)
         .then((res) => {
           if (res.data.code == 201) {
             localStorage.setItem('roomPassword_' + res.data.data.roomCode, res.data.data.password);
