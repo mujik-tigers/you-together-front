@@ -564,29 +564,8 @@ export default {
     checkFocus() {
       // console.log(this.iframeLock);
       if (document.activeElement === this.$refs.youtube.$el.querySelector('iframe')) {
-        // console.log('--- iframe focus on ---');
-
-        if (this.focusFlag == false) {
-          setTimeout(() => {
-            this.focusFlag = false;
-          }, 10000);
-        }
-
         this.focusFlag = true;
-
-        // setTimeout(() => {
-        //   console.log('콜백 실행시의 state: ' + this.playerState + ', time: ' + this.currentTime);
-        //   if (this.playerState === 1) {
-        //     this.playVideo();
-        //   } else if (this.playerState === 2) {
-        //     this.pauseVideo();
-        //   }
-        //   this.playerState = null;
-        //   this.focusFlag = false;
-        // }, 900);
-        // window.focus();
       } else {
-        // console.log('--- iframe focus off ---');
         this.focusFlag = false;
       }
     },
