@@ -297,8 +297,6 @@ export default {
           this.playlist = message.playlist;
           break;
         case "VIDEO_SYNC_INFO":
-          this.statusLock = true;
-          setTimeout(() => this.statusLock = false, 500);
           if (this.iframeLock) {
             break;
           }
@@ -313,17 +311,25 @@ export default {
               this.player.loadVideoById(this.currentVideoId, message.playerCurrentTime);
             }
             if (Math.abs(this.player.getCurrentTime() - message.playerCurrentTime) >= 0.6) {  // 시간이 안맞을 때
+              this.statusLock = true;
+              setTimeout(() => this.statusLock = false, 500);
               this.player.seekTo(message.playerCurrentTime);
             }
             if (this.currentRate !== message.playerRate) { // 재생 속도가 변경되었을 때
+              this.statusLock = true;
+              setTimeout(() => this.statusLock = false, 500);
               this.currentRate = message.playerRate;
               this.player.setPlaybackRate(this.currentRate);
             }
             if (this.player.getPlayerState() !== 1) {   // 클라이언트가 재생중이 아니라면
+              this.statusLock = true;
+              setTimeout(() => this.statusLock = false, 500);
               this.player.playVideo();
             }
           } else {                                // 일시 정지 중
             if (this.player.getPlayerState() !== 2) {   // 클라이언트가 일시정지 중이 아니라면
+              this.statusLock = true;
+              setTimeout(() => this.statusLock = false, 500);
               this.player.pauseVideo();
             }
           }
