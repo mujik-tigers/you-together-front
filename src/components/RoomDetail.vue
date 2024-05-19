@@ -558,9 +558,9 @@ export default {
       );
     },
     checkFocus() {
-      console.log(this.iframeLock);
+      // console.log(this.iframeLock);
       if (document.activeElement === this.$refs.youtube.$el.querySelector('iframe')) {
-        console.log('--- iframe focus on ---');
+        // console.log('--- iframe focus on ---');
 
         if (this.focusFlag == false) {
           setTimeout(() => {
@@ -582,7 +582,7 @@ export default {
         // }, 900);
         // window.focus();
       } else {
-        console.log('--- iframe focus off ---');
+        // console.log('--- iframe focus off ---');
         this.focusFlag = false;
       }
     },
