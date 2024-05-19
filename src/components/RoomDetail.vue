@@ -208,6 +208,7 @@ export default {
       changeTime: 0,
       focusFlag: false,
       iframeLock: false,
+      statusLock: false,
 
       interval:null
     };
@@ -310,9 +311,13 @@ export default {
               this.player.loadVideoById(this.currentVideoId, message.playerCurrentTime);
             }
             if (Math.abs(this.player.getCurrentTime() - message.playerCurrentTime) >= 0.6) {  // 시간이 안맞을 때
+              this.statusLock = true;
+              setTimeout(() => this.statusLock = false, 500);
               this.player.seekTo(message.playerCurrentTime);
             }
             if (this.currentRate !== message.playerRate) { // 재생 속도가 변경되었을 때
+              this.statusLock = true;
+              setTimeout(() => this.statusLock = false, 500);
               this.currentRate = message.playerRate;
               this.player.setPlaybackRate(this.currentRate);
             }
@@ -488,7 +493,7 @@ export default {
       this.playerState = event.target.getPlayerState();
 
       console.log(event);
-      if (this.checkFocus && (event.data == 2 || event.data == 3) && this.isEditable()) {
+      if (!this.statusLock && this.checkFocus && (event.data == 2 || event.data == 3) && this.isEditable()) {
         this.iframeLock = true;
         console.log('event target!!!')
 
@@ -504,10 +509,9 @@ export default {
           }, 1500);
         }, 600);
       }
-      
     },
     onPlayerRateChange(event) {
-      if (this.checkFocus && event.target.getPlaybackRate() != this.currentRate && this.isEditable()) {
+      if (!this.statusLock && this.checkFocus && event.target.getPlaybackRate() != this.currentRate && this.isEditable()) {
         this.iframeLock = true;
         this.currentRate = event.target.getPlaybackRate();
         console.log('RATE 메세지 전송!');
