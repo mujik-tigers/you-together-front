@@ -498,20 +498,20 @@ export default {
       this.playerState = event.target.getPlayerState();
 
       console.log(event);
-      if (!this.statusLock && this.checkFocus && (event.data == 2 || event.data == 3) && this.isEditable()) {
+      if (!this.statusLock && this.checkFocus && (event.data === 2 || event.data === 3 || event.data === 1) && this.isEditable()) {
         this.iframeLock = true;
         console.log('event target!!!')
 
         setTimeout(() => {
-          if (this.playerState == 2) {
+          if (this.playerState === 2) {
             this.pauseVideo(event.target.getCurrentTime());
-          } else if (this.playerState == 1) {
+          } else if (this.playerState === 1) {
             this.playVideo(event.target.getCurrentTime());
           }
           window.focus();
           setTimeout(() => {
             this.iframeLock = false;
-          }, 1500);
+          }, 800);
         }, 600);
       }
     },
