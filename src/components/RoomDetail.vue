@@ -18,7 +18,7 @@
           <!-- iframe start -->
           <YouTube
               v-show="this.currentVideoId != null"
-              src=""
+              :src="this.currentVideoId"
               :width="800"
               :height="450"
               :player-vars="YT_PLAYER_PARAMS"
@@ -243,6 +243,7 @@ export default {
             this.currentVideoTitle = res.data.data.currentVideoTitle;
             this.currentChannelTitle = res.data.data.currentChannelTitle;
             this.isEditableRole = this.isEditable();
+            this.currentVideoId = res.data.data.currentVideoId;
 
             this.connect();
           })
